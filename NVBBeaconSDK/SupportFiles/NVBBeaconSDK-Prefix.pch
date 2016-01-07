@@ -1,0 +1,33 @@
+//
+//  NVBBeaconSDK-Prefix.pch
+//  NVBBeaconSDK
+//
+//  Created by An Phan on 1/6/16.
+//  Copyright © 2016 Alex. All rights reserved.
+//
+
+#ifndef NVBBeaconSDK_Prefix_pch
+#define NVBBeaconSDK_Prefix_pch
+
+// Include any system framework and library headers here that should be included in all compilation units.
+// You will also need to set the Prefix Header build setting of one or more of your targets to reference this file.
+
+#import <Foundation/Foundation.h>
+
+/*
+#ifndef SHOW_DEBUG
+#   ifdef DEBUG
+#       define SHOW_DEBUG 1
+#   else
+#       define SHOW_DEBUG 0
+#   endif
+#endif
+
+#if SHOW_DEBUG == 1
+#   define DEBUG_LOG(fmt, ...) NSLog((@"-[File: %s] - [Line:%d]: " fmt), (strrchr(__FILE__, '/') ?: __FILE__ - 1) + 1, __LINE__, ##__VA_ARGS__)
+#else
+#   define DEBUG_LOG(fmt, ...) do {} while(0)
+#endif
+*/
+
+#endif /* NVBBeaconSDK_Prefix_pch */
