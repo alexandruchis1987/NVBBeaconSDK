@@ -5,8 +5,22 @@
 //  Created by An Phan on 1/6/16.
 //  Copyright © 2016 Alex. All rights reserved.
 //
+#import <Foundation/Foundation.h>
 
 @interface NVBBeaconSDK : NSObject
+
+@property (nonatomic, getter=isEnableDebugMode) BOOL enableDebugMode;
+
+///--------------------------------------
+/// @name Shared NVBBeaconSDK
+///--------------------------------------
+
+/**
+ A shared instance of `NVBBeaconSDK` that should be used for all logging.
+ 
+ @return An shared singleton instance of `NVBBeaconSDK`.
+ */
++ (instancetype)sharedNVBBeaconSDK;
 
 /**
  Sets the clientKey of your application.

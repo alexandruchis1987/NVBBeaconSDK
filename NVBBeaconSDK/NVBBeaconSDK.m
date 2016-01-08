@@ -7,13 +7,22 @@
 //
 
 #import "NVBBeaconSDK.h"
+#import "NVBLogger.h"
 
 @implementation NVBBeaconSDK
 
++ (instancetype)sharedNVBBeaconSDK {
+    static NVBBeaconSDK *beaconSDK;
+    static dispatch_once_t onceToken;
+    dispatch_once(&onceToken, ^{
+        beaconSDK = [[NVBBeaconSDK alloc] init];
+    });
+    return beaconSDK;
+}
+
 + (void)setApplicationIdentifier:(NSString *)clientKey {
     if (clientKey.length == 0) {
-//        DEBUG_LOG(@"'clientKey' should not be nil.");
-        NSLog(@"'clientKey' should not be nil.");
+        NVBLog(@"'clientKey' should not be nil.");
     }
     NSAssert([clientKey length] > 0, @"'clientKey' should not be nil.");
 }

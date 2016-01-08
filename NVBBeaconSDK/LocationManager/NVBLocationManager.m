@@ -7,6 +7,7 @@
 //
 
 #import "NVBLocationManager.h"
+#import "NVBLogger.h"
 
 @interface NVBLocationManager () <CLLocationManagerDelegate>
 
@@ -73,6 +74,7 @@
 
     if (self.delegate && [self.delegate respondsToSelector:@selector(locationDetected:)]) {
         [self.delegate locationDetected:locations[0]];
+        NVBLog(@"Location: %@", locations[0]);
     }
 }
 

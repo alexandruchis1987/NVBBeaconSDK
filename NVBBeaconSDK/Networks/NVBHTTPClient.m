@@ -7,6 +7,7 @@
 //
 
 #import "NVBHTTPClient.h"
+#import "NVBLogger.h"
 
 static NSString *const kBaseUrl = @"http://jsonplaceholder.typicode.com/";
 
@@ -49,16 +50,14 @@ static NSString *const kBaseUrl = @"http://jsonplaceholder.typicode.com/";
       success:^(NSURLSessionDataTask * _Nonnull task, id  _Nullable responseObject) {
           
           // Notify succeed
-//          DEBUG_LOG(@"Reponse: %@", responseObject);
-          NSLog(@"Reponse: %@", responseObject);
+          NVBLog(@"Reponse: %@", responseObject);
           if (successedBlock) {
               successedBlock(responseObject);
           }
       } failure:^(NSURLSessionDataTask * _Nullable task, NSError * _Nonnull error) {
           
           // Notify in case having error
-//          DEBUG_LOG(@"Failure: %@", error);
-          NSLog(@"Failure: %@", error);
+          NVBLog(@"Failure: %@", error);
           if (failedBlock) {
               failedBlock(error);
           }
