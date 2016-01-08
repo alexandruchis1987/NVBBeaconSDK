@@ -16,7 +16,7 @@ Pod::Spec.new do |s|
   #
 
   s.name         = "NVBBeaconSDK"
-  s.version      = "0.1.0"
+  s.version      = "0.3.0"
   s.summary      = "Framework used to interract with beacons."
 
   # This description is used to generate tags and improve search results.
@@ -26,7 +26,7 @@ Pod::Spec.new do |s|
   #   * Finally, don't worry about the indent, CocoaPods strips it!
   s.description  = "You can integrate it and display beacons around you."
 
-  s.homepage     = "https://github.com/annphan/NVBBeaconSDK"
+  s.homepage     = "https://github.com/alexandruchis1987/NVBBeaconSDK"
   # s.screenshots  = "www.example.com/screenshots_1.gif", "www.example.com/screenshots_2.gif"
 
 
@@ -77,7 +77,7 @@ Pod::Spec.new do |s|
   #  Supports git, hg, bzr, svn and HTTP.
   #
 
-  s.source       = { :git => "https://github.com/annphan/NVBBeaconSDK.git", :tag => "0.1.0" }
+  s.source       = { :git => "https://github.com/alexandruchis1987/NVBBeaconSDK.git", :tag => "0.3.0" }
 
 
   # ――― Source Code ―――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――― #
