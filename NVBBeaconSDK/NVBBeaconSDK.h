@@ -6,6 +6,9 @@
 //  Copyright © 2016 Alex. All rights reserved.
 //
 #import <Foundation/Foundation.h>
+#import "NVBLocationManager.h"
+#import "NVBHTTPClient.h"
+#import "NVBLogger.h"
 
 @interface NVBBeaconSDK : NSObject
 

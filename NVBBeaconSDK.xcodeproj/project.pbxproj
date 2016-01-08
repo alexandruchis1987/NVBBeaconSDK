@@ -105,7 +105,6 @@
 			children = (
 				0401CBEB1C40067F00332CC0 /* Utilities */,
 				0498F19F1C3D7E7A00D45983 /* LocationManager */,
-				0498F19A1C3D7DC100D45983 /* SupportFiles */,
 				0498F17C1C3D491F00D45983 /* Networks */,
 				0498F15F1C3D422400D45983 /* Info.plist */,
 				0498F1871C3D6A7B00D45983 /* NVBBeaconSDK.h */,
@@ -130,13 +129,6 @@
 				0498F17E1C3D491F00D45983 /* NVBHTTPClient.m */,
 			);
 			path = Networks;
-			sourceTree = "<group>";
-		};
-		0498F19A1C3D7DC100D45983 /* SupportFiles */ = {
-			isa = PBXGroup;
-			children = (
-			);
-			path = SupportFiles;
 			sourceTree = "<group>";
 		};
 		0498F19F1C3D7E7A00D45983 /* LocationManager */ = {
