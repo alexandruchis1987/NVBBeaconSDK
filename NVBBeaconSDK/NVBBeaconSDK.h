@@ -2,11 +2,10 @@
 //  NVBBeaconSDK.h
 //  NVBBeaconSDK
 //
-//  Created by An Phan on 1/6/16.
+//  Created by Alexandru Chis on 11/01/16.
 //  Copyright © 2016 Alex. All rights reserved.
 //
 #import <Foundation/Foundation.h>
-#import "NVBLocationManager.h"
 #import "NVBHTTPClient.h"
 #import "NVBLogger.h"
 
@@ -31,5 +30,28 @@
  @param clientKey The client key of your NVBBeaconSDK application.
  */
 + (void)setApplicationIdentifier:(NSString *)clientKey;
+
+
+
+/*!
+ @abstract Starts the entire plaform services. Application Id is checked if it is provided
+ */
+
++ (void) startServices;
+
+
+/*!
+ @abstract Stops the entire plaform services.
+ */
+
++ (void) stopServices;
+
+
+
+/*!
+ @abstract The current application id that was used to configure NVBBeacons framework.
+ */
++ (NSString *)getApplicationId;
+
 
 @end

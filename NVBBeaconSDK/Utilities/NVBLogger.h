@@ -2,7 +2,7 @@
 //  NVBLogger.h
 //  NVBBeaconSDK
 //
-//  Created by An Phan on 1/8/16.
+//  Created by Alexandru Chis on 11/01/16.
 //  Copyright © 2016 Alex. All rights reserved.
 //
 #import <Foundation/Foundation.h>

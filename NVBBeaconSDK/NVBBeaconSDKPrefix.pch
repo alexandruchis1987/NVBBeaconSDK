@@ -1,0 +1,16 @@
+//
+//  NVBBeaconSDKPrefix.pch
+//  NVBBeaconSDK
+//
+//  Created by Alexandru Chis on 1/11/16.
+//  Copyright © 2016 Alex. All rights reserved.
+//
+
+#ifndef NVBBeaconSDKPrefix_pch
+#define NVBBeaconSDKPrefix_pch
+
+#define APP_FOREGROUND @"APP_FOREGROUND"
+
+
+
+#endif /* NVBBeaconSDKPrefix_pch */

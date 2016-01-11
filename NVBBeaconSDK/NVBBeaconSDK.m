@@ -2,12 +2,15 @@
 //  NVBBeaconSDK.m
 //  NVBBeaconSDK
 //
-//  Created by An Phan on 1/6/16.
+//  Created by Alexandru Chis on 11/01/16.
 //  Copyright © 2016 Alex. All rights reserved.
 //
 
 #import "NVBBeaconSDK.h"
 #import "NVBLogger.h"
+#import "NVBDataStore.h"
+#import "NVBBeaconMonitoringService.h"
+
 
 @implementation NVBBeaconSDK
 
@@ -26,5 +29,41 @@
     }
     NSAssert([clientKey length] > 0, @"'clientKey' should not be nil.");
 }
+
+
+/*!
+ @abstract Starts the entire plaform services. Application Id is checked if it is provided
+ */
+
++ (void) startServices
+{
+    //Launching the service handling the detection of the beacons and the entire campaign management
+    
+    //to be taken out
+    [[NVBDataStore sharedInstance] startLocationServicesForeground];
+    [[NVBBeaconMonitoringService sharedInstance] startServices];
+}
+
+
+/*!
+ @abstract Stops the entire plaform services.
+ */
+
++ (void) stopServices
+{
+    
+}
+
+
+
+/*!
+ @abstract The current application id that was used to configure NVBBeacons framework.
+ */
++ (NSString *)getApplicationId
+{
+    return @"";
+}
+
+
 
 @end

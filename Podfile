@@ -3,8 +3,7 @@
 # Uncomment this line if you're using Swift
 # use_frameworks!
 
-target 'NVBBeaconSDK' do
-    pod 'AFNetworking'
+target 'NVBBeaconSDK' do    
     pod 'Parse'
 end
 

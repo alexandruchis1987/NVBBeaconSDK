@@ -29,5 +29,7 @@
 	</dict>
 	<key>NSLocationAlwaysUsageDescription</key>
 	<string> NVBBeaconSDK requires access to your phone’s location to display beacons around you</string>
+    
+    
 </dict>
 </plist>
