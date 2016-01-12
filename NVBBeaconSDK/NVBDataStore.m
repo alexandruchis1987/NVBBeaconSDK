@@ -7,12 +7,10 @@
 
 
 #import "NVBDataStore.h"
+#import "NVBLogger.h"
 
-
-#define NVB_API_BASE_URL @"https://invibe-deploy.herokuapp.com/api/v1/"
-#define IS_IOS7 ([[[UIDevice currentDevice] systemVersion] floatValue] >= 7.0)
+#define NVB_API_BASE_URL @"http://admin.invibe.me/api/v1/"
 #define IS_IOS8 ([[[UIDevice currentDevice] systemVersion] floatValue] >= 8.0)
-#define IOS7_STATUS_BAR_DISPLACEMENT IS_IOS7 ? 20 : 0
 
 
 static NSString * const kInvibeAPIBaseURLString = NVB_API_BASE_URL;
@@ -59,6 +57,9 @@ static NSString * const kInvibeAPIBaseURLString = NVB_API_BASE_URL;
         return nil;
     }
     
+    //to be taken out
+    [[NVBLogger sharedLogger] logMessageWithFormat:@"%@ unu ", @"test"];
+    
     [self registerHTTPOperationClass:[AFJSONRequestOperation class]];
     [self setParameterEncoding:AFJSONParameterEncoding];
     
@@ -67,14 +68,10 @@ static NSString * const kInvibeAPIBaseURLString = NVB_API_BASE_URL;
     [self setDefaultHeader:@"Cache-Control" value:@"no-cache"];
     
     
-    self.operationsQueue = [[NSOperationQueue alloc] init];
-    
-    
     [[NSNotificationCenter defaultCenter] addObserver:self
                                              selector:@selector(memoryWarning:)
                                                  name:UIApplicationDidReceiveMemoryWarningNotification
                                                object:nil];
-    
     
     return self;
 }
@@ -418,6 +415,43 @@ static NSString * const kInvibeAPIBaseURLString = NVB_API_BASE_URL;
     }];
 }
 
+
+/**
+ * Method which returns the beacons associated with the current client key
+ */
+- (void)getRegisteredBeacons:(beaconPromotionBlock)completion
+{
+    [self getPath:@"communication/"
+       parameters:nil
+          success:^(AFHTTPRequestOperation *operation, id responseObject) {
+              
+              //to be taken out
+              NSLog (@"Reply is %@ ", responseObject);
+              
+//              NVBBeacon* beacon = [NVBBeacon beaconWithDictionary:responseObject];
+//              
+//              completion(beacon,nil);
+              
+          } failure:^(AFHTTPRequestOperation *operation, NSError *error) {
+              if (error.localizedRecoverySuggestion)
+              {
+                  NSDictionary *dictionary = [NSJSONSerialization JSONObjectWithData:[[error.userInfo valueForKey:@"NSLocalizedRecoverySuggestion"]dataUsingEncoding:NSUTF8StringEncoding] options:kNilOptions error:&error];
+                  
+                  if (dictionary)
+                  {
+                      if ([dictionary valueForKey:@"error_message"])
+                      {
+                          if(completion)completion(nil,[dictionary valueForKey:@"error_message"]);
+                          return;
+                      }
+                  }
+              }
+              
+              if(completion)completion(nil,@"There was an error communicating with the server");
+              if (error) NSLog(@" %@",error);
+              
+          }];
+}
 
 
 @end

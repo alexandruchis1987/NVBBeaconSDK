@@ -28,6 +28,9 @@
         NVBLog(@"'clientKey' should not be nil.");
     }
     NSAssert([clientKey length] > 0, @"'clientKey' should not be nil.");
+    
+    NSString *encodedHeader = [NSString stringWithFormat:@"Bearer %@", clientKey];
+    [[NVBDataStore sharedInstance] setDefaultHeader:@"Authorization" value:encodedHeader];
 }
 
 

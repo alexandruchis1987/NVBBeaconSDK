@@ -12,6 +12,7 @@
 #import "UIView+NVBAnimations.h"
 #import "NVBBeacon.h"
 #import "NVBShowBeacon.h"
+#import "NVBBeaconSDKPrefix.pch" //to be taken out to check if it works without this as well
 
 #define ESTIMOTE_UUID @"B9407F30-F5F8-466E-AFF9-25556B57FE6D"
 
@@ -95,25 +96,21 @@
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(updateBeacons) name:@"updateInternalBadgeNotification" object:nil];
     self.locationManager.delegate = self;
     self.locationManager.desiredAccuracy = kCLLocationAccuracyNearestTenMeters; // 10 m
+    
+    
+    //retrieving the beacons which we will be monitoring
+    [[NVBDataStore sharedInstance] getRegisteredBeacons:^(NVBBeacon *beacon, NSString *error) {
+        
+    }];
 }
 
 -(void) checkBluetooth
 {
-    //    NSDictionary *info = [[NSBundle mainBundle] infoDictionary];
-    //    NSString *version = [info objectForKey:@"CFBundleVersion"];
-    //    NSString* storedVersion = [[NSUserDefaults standardUserDefaults] valueForKey:@"current_version"];
-    //    if (![storedVersion isEqualToString:version])
-    //    {
-    //        [[NSUserDefaults standardUserDefaults] setValue:version forKey:@"current_version"];
-    //        [[NSUserDefaults standardUserDefaults] synchronize];
-    
     static dispatch_once_t onceToken;
     dispatch_once(&onceToken, ^{
         self.bluetoothManager = [[CBCentralManager alloc] initWithDelegate:self queue:dispatch_get_main_queue()];
-        //            [self centralManagerDidUpdateState:self.bluetoothManager];
+        
     });
-    //    }
-    
 }
 
 - (void)centralManagerDidUpdateState:(CBCentralManager *)central
@@ -170,18 +167,19 @@
     if ((status == kCLAuthorizationStatusNotDetermined)  || (status == kCLAuthorizationStatusDenied)
         || (status == kCLAuthorizationStatusAuthorizedAlways) || (status == kCLAuthorizationStatusAuthorizedWhenInUse))
     {
-        
-        [self initRegion];
-        [self locationManager:self.locationManager didStartMonitoringForRegion:self.beaconRegion1];
-        [self locationManager:self.locationManager didStartMonitoringForRegion:self.beaconRegion2];
-        [self locationManager:self.locationManager didStartMonitoringForRegion:self.beaconRegion3];
-        [self locationManager:self.locationManager didStartMonitoringForRegion:self.beaconRegion4];
-        [self locationManager:self.locationManager didStartMonitoringForRegion:self.beaconRegion5];
-        [self locationManager:self.locationManager didStartMonitoringForRegion:self.beaconRegion6];
-        [self locationManager:self.locationManager didStartMonitoringForRegion:self.beaconRegion7];
-        [self locationManager:self.locationManager didStartMonitoringForRegion:self.beaconRegion8];
-        [self locationManager:self.locationManager didStartMonitoringForRegion:self.beaconRegion9];
-        [self locationManager:self.locationManager didStartMonitoringForRegion:self.beaconRegion10];
+ 
+        //to be taken out
+//        [self initRegion];
+//        [self locationManager:self.locationManager didStartMonitoringForRegion:self.beaconRegion1];
+//        [self locationManager:self.locationManager didStartMonitoringForRegion:self.beaconRegion2];
+//        [self locationManager:self.locationManager didStartMonitoringForRegion:self.beaconRegion3];
+//        [self locationManager:self.locationManager didStartMonitoringForRegion:self.beaconRegion4];
+//        [self locationManager:self.locationManager didStartMonitoringForRegion:self.beaconRegion5];
+//        [self locationManager:self.locationManager didStartMonitoringForRegion:self.beaconRegion6];
+//        [self locationManager:self.locationManager didStartMonitoringForRegion:self.beaconRegion7];
+//        [self locationManager:self.locationManager didStartMonitoringForRegion:self.beaconRegion8];
+//        [self locationManager:self.locationManager didStartMonitoringForRegion:self.beaconRegion9];
+//        [self locationManager:self.locationManager didStartMonitoringForRegion:self.beaconRegion10];
     }
 }
 

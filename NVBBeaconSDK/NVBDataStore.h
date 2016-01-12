@@ -17,23 +17,30 @@ typedef void(^beaconPromotionBlock)(NVBBeacon *beacon, NSString *error);
 
 @interface NVBDataStore : AFHTTPClient
 
-@property (nonatomic, strong) NSOperationQueue* operationsQueue;
 @property (nonatomic, strong) NSString* applicationId;
-
 
 + (NVBDataStore *)sharedInstance;
 
+
+//location manager related methods
 - (void)startLocationServicesForeground ;
 - (void)startLocationServicesBackground ;
 - (void)stopLocationServices;
 
+//methods used to subscribe to a beacon or unsubscribe from it (used by the push notification system)
 -(void)unsubscribeFromInvibe:(NSString*) pubnub withCompletion:(booleanSuccessBlock)completion;
 -(void)subscribeToInvibeWithChannel:(NSString*) channel onCompletion:(booleanSuccessBlock)completion;
 -(void)syncUnsubscribeFromChannels;
 
 
+//method which notifies the backend if the accept or decline button was pressed in the promotion view
 -(void) notifyCommunicationAPI:(NVBBeaconPromotion*) promotion andBeacon:(NVBBeacon*) beacon andParam:(NSString*) param andState:(NSString*) state onCompletion:(booleanSuccessBlock) completionBlock;
+
+//method with retrieves the defined promotion on the backend for the specified beacon
 - (void)getPromotionsWithBeaconId:(NSString*) beaconId onCompletion:(beaconPromotionBlock)completion;
+
+//method which returns the beacons associated with the current client id
+- (void)getRegisteredBeacons:(beaconPromotionBlock)completion;
 
 
 -(void) setApplicationId:(NSString*) applicationId;
