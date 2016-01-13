@@ -7,9 +7,9 @@
 //
 
 #import "NVBBeaconSDK.h"
-#import "NVBLogger.h"
 #import "NVBDataStore.h"
 #import "NVBBeaconMonitoringService.h"
+#import <Parse/Parse.h>
 
 
 @implementation NVBBeaconSDK
@@ -25,7 +25,7 @@
 
 + (void)setApplicationIdentifier:(NSString *)clientKey {
     if (clientKey.length == 0) {
-        NVBLog(@"'clientKey' should not be nil.");
+        NSLog(@"'clientKey' should not be nil.");
     }
     NSAssert([clientKey length] > 0, @"'clientKey' should not be nil.");
     
@@ -66,6 +66,46 @@
 {
     return @"";
 }
+
++ (void)enableDebugMode
+{
+    [[NVBDataStore sharedInstance] enableDebugMode];
+}
+
+
+
+#pragma Push Notifications
+
+/////////////////////////////////////////////////////////////////
+/*
+ * Methods related to push notifications
+ */
+/////////////////////////////////////////////////////////////////
+
+
++(void) didRegisterForRemoteNotificationsWithDeviceToken:(NSData *)deviceToken
+{
+    DDLogDebug (@"Successfully reigstered for remote notifications");
+    PFInstallation *currentInstallation = [PFInstallation currentInstallation];
+    [currentInstallation setDeviceTokenFromData:deviceToken];
+    currentInstallation.channels = @[ @"global" ];
+    [currentInstallation saveInBackground];
+}
+
+
++ (void) didReceiveRemoteNotification:(NSDictionary *)userInfo {
+
+    DDLogDebug (@"Successfully reigstered for remote notifications");
+    [PFPush handlePush:userInfo];
+}
+
++ (void) didReceiveRemoteNotification:(NSDictionary *)userInfo fetchCompletionHandler:(void (^)(UIBackgroundFetchResult))completionHandler
+{
+    DDLogDebug (@"Successfully reigstered for remote notifications");
+    [PFPush handlePush:userInfo];
+    
+}
+
 
 
 

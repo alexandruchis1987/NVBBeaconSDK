@@ -20,6 +20,7 @@
 @property (nonatomic, strong) NSString* venue; // venue uri for which this beacon is assigned to
 @property (nonatomic, strong) NSString* id; //beacon id
 @property (nonatomic, strong) NSString* venue_name; //venue name for which the beacon is assigned to
+@property (nonatomic, strong) NSString* uuid; //vendor uuid
 
 @property (nonatomic, strong) NVBBeaconPromotion* enterPromotion; //promotion triggered when entering the region
 @property (nonatomic, strong) NVBBeaconPromotion* exitPromotion; //promotion triggered when exiting the region

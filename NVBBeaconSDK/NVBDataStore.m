@@ -5,12 +5,10 @@
 //  Copyright (c) 2013 Alex Chis. All rights reserved.
 //
 
-
 #import "NVBDataStore.h"
-#import "NVBLogger.h"
+#import "NVBCustomFormatter.h"
 
 #define NVB_API_BASE_URL @"http://admin.invibe.me/api/v1/"
-#define IS_IOS8 ([[[UIDevice currentDevice] systemVersion] floatValue] >= 8.0)
 
 
 static NSString * const kInvibeAPIBaseURLString = NVB_API_BASE_URL;
@@ -57,9 +55,6 @@ static NSString * const kInvibeAPIBaseURLString = NVB_API_BASE_URL;
         return nil;
     }
     
-    //to be taken out
-    [[NVBLogger sharedLogger] logMessageWithFormat:@"%@ unu ", @"test"];
-    
     [self registerHTTPOperationClass:[AFJSONRequestOperation class]];
     [self setParameterEncoding:AFJSONParameterEncoding];
     
@@ -73,6 +68,19 @@ static NSString * const kInvibeAPIBaseURLString = NVB_API_BASE_URL;
                                                  name:UIApplicationDidReceiveMemoryWarningNotification
                                                object:nil];
     
+    [DDLog addLogger:[DDTTYLogger sharedInstance] withLevel:DDLogLevelError]; // TTY = Xcode console
+    [DDTTYLogger sharedInstance].logFormatter = [[NVBCustomFormatter alloc] init];
+    
+    [DDLog addLogger:[DDASLLogger sharedInstance] withLevel:DDLogLevelError]; // ASL = Apple System Logs
+    [DDASLLogger sharedInstance].logFormatter = [[NVBCustomFormatter alloc] init];
+    
+
+    DDFileLogger *fileLogger = [[DDFileLogger alloc] init]; // File Logger
+    fileLogger.logFormatter = [[NVBCustomFormatter alloc] init];
+    fileLogger.rollingFrequency = 60 * 60 * 24; // 24 hour rolling
+    fileLogger.logFileManager.maximumNumberOfLogFiles = 7;
+    [DDLog addLogger:fileLogger withLevel:DDLogLevelError];
+
     return self;
 }
 
@@ -122,7 +130,7 @@ static NSString * const kInvibeAPIBaseURLString = NVB_API_BASE_URL;
  */
 
 - (void)startLocationServicesForeground {
-    NSLog (@"startLocationServicesBackground");
+    DDLogDebug (@"startLocationServicesForegroun");
     self.locationManager = [[CLLocationManager alloc] init];
     self.locationManager.delegate = self;
     self.locationManager.distanceFilter = 25.0f; // whenever we move
@@ -130,15 +138,17 @@ static NSString * const kInvibeAPIBaseURLString = NVB_API_BASE_URL;
     
     
     if(IS_IOS8) {
+
         [self.locationManager requestAlwaysAuthorization];
     }
     
     if ([CLLocationManager locationServicesEnabled]) {
+        //to be taken out nu cred ca ne trebuie updating location
         [self.locationManager startUpdatingLocation];
         
         
     } else {
-        NSLog(@"Location services is not enabled");
+        DDLogError(@"Location services are not enabled");
     }
 }
 
@@ -179,9 +189,12 @@ static NSString * const kInvibeAPIBaseURLString = NVB_API_BASE_URL;
 
 - (void)locationManager:(CLLocationManager *)manager didChangeAuthorizationStatus:(CLAuthorizationStatus)status
 {
+    DDLogDebug(@"status is %d", status);
+    
+    
     if (status == kCLAuthorizationStatusDenied)
     {
-        NSLog (@"Location is Stauts Denied");
+        DDLogError(@"Location Services permission is denied");
         [[NSNotificationCenter defaultCenter] postNotificationName:@"LocationDenied" object:nil];
     }
 }
@@ -203,14 +216,17 @@ static NSString * const kInvibeAPIBaseURLString = NVB_API_BASE_URL;
 -(void) subscribeToPubnubWithChannel:(NSString*) channel andUUID:(NSString*) uuid
 {
     
+    DDLogDebug(@"Subscribing to channel %@ and uuid %@", channel, uuid);
+    
     NSDictionary *parameters = @{@"uuid":uuid,
                                  @"channel":channel,
                                  };
     [self postPath:@"/api/v1/pubnubconnect/" parameters:parameters success:^(AFHTTPRequestOperation *operation, id responseObject) {
-        NSLog (@"Backend subscribeToPubnubWithChannel success ");
-    }failure:^(AFHTTPRequestOperation *operation, NSError *error) {
         
-        NSLog (@"Backend subscribeToPubnubWithChannel failure ");
+        DDLogDebug (@"Subscribtion is successfull ");
+    }failure:^(AFHTTPRequestOperation *operation, NSError *error) {
+
+        DDLogError(@"Subscribtion failed %@", error);
     }
      ];
 }
@@ -221,6 +237,7 @@ static NSString * const kInvibeAPIBaseURLString = NVB_API_BASE_URL;
  */
 
 -(void)syncUnsubscribeFromChannels{
+    DDLogDebug(@"Enter");
     self.lastBeacon = nil;
     self.stateBeacon = @"2";
     
@@ -236,8 +253,7 @@ static NSString * const kInvibeAPIBaseURLString = NVB_API_BASE_URL;
 
 
 -(void)unsubscribeFromInvibe:(NSString*) pubnub withCompletion:(booleanSuccessBlock)completion{
-    //to be taken out
-    NSLog (@"data store unsubscribe from %@", pubnub);
+    DDLogDebug (@"unsubscribe from  %@", pubnub);
     
     self.lastBeacon = pubnub;
     self.stateBeacon = @"2";
@@ -255,8 +271,7 @@ static NSString * const kInvibeAPIBaseURLString = NVB_API_BASE_URL;
 
 
 -(void)subscribeToInvibeWithChannel:(NSString*) channel onCompletion:(booleanSuccessBlock)completion{
-    //to be taken out
-    NSLog (@"data store subscribe from %@", channel);
+    DDLogDebug (@"Subscribe to channel %@", channel);
     
     
     self.lastBeacon = channel;
@@ -286,12 +301,14 @@ static NSString * const kInvibeAPIBaseURLString = NVB_API_BASE_URL;
                                      @"channel":self.lastBeacon
                                      };
         
-        //to be taken out
-        NSLog (@"calling subscribe with params %@", parameters);
+
+        DDLogDebug (@"Subscribing to channel %@", parameters);
         
         [self postPath:@"subscription/subscribe/" parameters:parameters success:^(AFHTTPRequestOperation *operation, id responseObject) {
+            DDLogDebug (@"Subscription successfull");
             
         } failure:^(AFHTTPRequestOperation *operation, NSError *error) {
+            DDLogError (@"Subscription failed %@", error);
             if (error) NSLog(@" %@",error);
             
         }];
@@ -309,12 +326,13 @@ static NSString * const kInvibeAPIBaseURLString = NVB_API_BASE_URL;
             [parameters setValue:self.lastBeacon forKey:@"channel"];
         }
         
-        //to be taken out
-        NSLog (@"calling unsubscribe with params %@", parameters);
+        DDLogDebug (@"Unsubscribing from channel %@", parameters);
         
         
         [self postPath:@"subscription/unsubscribe/" parameters:parameters success:^(AFHTTPRequestOperation *operation, id responseObject) {
+            DDLogDebug (@"Unsubscribe successfull");
         } failure:^(AFHTTPRequestOperation *operation, NSError *error) {
+            DDLogDebug (@"Unsubscribe failed %@", error);
             if (error) NSLog(@" %@",error);
         }];
     }
@@ -336,6 +354,7 @@ static NSString * const kInvibeAPIBaseURLString = NVB_API_BASE_URL;
 
 - (void)getPromotionsWithBeaconId:(NSString*) beaconId  onCompletion:(beaconPromotionBlock)completion
 {
+    DDLogDebug (@"Get promotion with beacon id %@", beaconId);
     
     NSString* major = @"";
     NSString* minor = @"";
@@ -346,20 +365,16 @@ static NSString * const kInvibeAPIBaseURLString = NVB_API_BASE_URL;
     NSString* path = @"";
     path = [NSString stringWithFormat:@"communication/?major=%@&minor=%@", major, minor];
     
-    NSLog (@"path is %@ ", path);
-    
     [self getPath:path
        parameters:nil
           success:^(AFHTTPRequestOperation *operation, id responseObject) {
               
-              //to be taken out
-              NSLog (@"Reply is %@ ", responseObject);
-              
+              DDLogDebug (@"Get promotions was successfull");
               NVBBeacon* beacon = [NVBBeacon beaconWithDictionary:responseObject];
-              
               completion(beacon,nil);
               
           } failure:^(AFHTTPRequestOperation *operation, NSError *error) {
+              DDLogError (@"Get promotions failed %@ ", error);
               if (error.localizedRecoverySuggestion)
               {
                   NSDictionary *dictionary = [NSJSONSerialization JSONObjectWithData:[[error.userInfo valueForKey:@"NSLocalizedRecoverySuggestion"]dataUsingEncoding:NSUTF8StringEncoding] options:kNilOptions error:&error];
@@ -391,10 +406,15 @@ static NSString * const kInvibeAPIBaseURLString = NVB_API_BASE_URL;
                                  
                                  };
     
+    DDLogDebug (@"NotifyCommunicationApi %@ ", parameters);
+    
     [self postPath:[NSString stringWithFormat:@"communication/%@/displayed/", promotion.id] parameters:parameters success:^(AFHTTPRequestOperation *operation, id responseObject) {
+        
+        DDLogDebug (@"NotifyCommunicationApi was successful ");
         
         completionBlock (YES, nil);
     } failure:^(AFHTTPRequestOperation *operation, NSError *error) {
+        DDLogDebug (@"NotifyCommunicationApi faile %@ ", error);
         if (error.localizedRecoverySuggestion)
         {
             NSDictionary *dictionary = [NSJSONSerialization JSONObjectWithData:[[error.userInfo valueForKey:@"NSLocalizedRecoverySuggestion"]dataUsingEncoding:NSUTF8StringEncoding] options:kNilOptions error:&error];
@@ -419,20 +439,31 @@ static NSString * const kInvibeAPIBaseURLString = NVB_API_BASE_URL;
 /**
  * Method which returns the beacons associated with the current client key
  */
-- (void)getRegisteredBeacons:(beaconPromotionBlock)completion
+- (void)getRegisteredBeacons:(arrayListBlock)completion
 {
+    DDLogDebug (@"Enter");
     [self getPath:@"communication/"
        parameters:nil
           success:^(AFHTTPRequestOperation *operation, id responseObject) {
+
+              DDLogDebug (@"getRegisteredBeacons was successfull");
               
-              //to be taken out
-              NSLog (@"Reply is %@ ", responseObject);
+              NSMutableArray* arrBeacons = [[NSMutableArray alloc] init];
+              if (responseObject[@"objects"])
+              {
+                  for (NSDictionary* dict in responseObject[@"objects"])
+                  {
+                      NVBBeacon* beacon = [NVBBeacon beaconWithDictionary:dict];
+                      [arrBeacons addObject:beacon];
+                  }
+              }
+
               
-//              NVBBeacon* beacon = [NVBBeacon beaconWithDictionary:responseObject];
-//              
-//              completion(beacon,nil);
+              completion(arrBeacons,nil);
               
           } failure:^(AFHTTPRequestOperation *operation, NSError *error) {
+              
+              DDLogError (@"getRegisteredBeacons failed %@", error);
               if (error.localizedRecoverySuggestion)
               {
                   NSDictionary *dictionary = [NSJSONSerialization JSONObjectWithData:[[error.userInfo valueForKey:@"NSLocalizedRecoverySuggestion"]dataUsingEncoding:NSUTF8StringEncoding] options:kNilOptions error:&error];
@@ -453,5 +484,24 @@ static NSString * const kInvibeAPIBaseURLString = NVB_API_BASE_URL;
           }];
 }
 
+
+-(void) enableDebugMode
+{
+    [DDLog removeAllLoggers];
+    [DDLog addLogger:[DDTTYLogger sharedInstance] withLevel:DDLogLevelDebug]; // TTY = Xcode console
+    [DDTTYLogger sharedInstance].logFormatter = [[NVBCustomFormatter alloc] init];
+    
+    [DDLog addLogger:[DDASLLogger sharedInstance] withLevel:DDLogLevelDebug]; // ASL = Apple System Logs
+    [DDASLLogger sharedInstance].logFormatter = [[NVBCustomFormatter alloc] init];
+    
+    
+    DDFileLogger *fileLogger = [[DDFileLogger alloc] init]; // File Logger
+    fileLogger.logFormatter = [[NVBCustomFormatter alloc] init];
+    fileLogger.rollingFrequency = 60 * 60 * 24; // 24 hour rolling
+    fileLogger.logFileManager.maximumNumberOfLogFiles = 7;
+    [DDLog addLogger:fileLogger withLevel:DDLogLevelDebug];
+    
+    DDLogDebug (@"Debug Mode is enabled");
+}
 
 @end

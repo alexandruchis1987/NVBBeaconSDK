@@ -7,11 +7,10 @@
 //
 #import <Foundation/Foundation.h>
 #import "NVBHTTPClient.h"
-#import "NVBLogger.h"
 
 @interface NVBBeaconSDK : NSObject
 
-@property (nonatomic, getter=isEnableDebugMode) BOOL enableDebugMode;
+
 
 ///--------------------------------------
 /// @name Shared NVBBeaconSDK
@@ -52,6 +51,36 @@
  @abstract The current application id that was used to configure NVBBeacons framework.
  */
 + (NSString *)getApplicationId;
+
+
+/*!
+ @abstract Method used for enable debug mode for the library
+ */
++ (void)enableDebugMode;
+
+
+/*!
+ @abstract Method which notifies parse that we successfully registered for push notifications
+ */
+
++(void) didRegisterForRemoteNotificationsWithDeviceToken:(NSData *)deviceToken;
+
+
+/*!
+ @abstract Method which handles the push notification
+ */
+
++ (void) didReceiveRemoteNotification:(NSDictionary *)userInfo;
+
+/*!
+ @abstract Method which handles the push notification
+ */
+
++ (void) didReceiveRemoteNotification:(NSDictionary *)userInfo fetchCompletionHandler:(void (^)(enum UIBackgroundFetchResult result))completionHandler;
+
+
+
+
 
 
 @end

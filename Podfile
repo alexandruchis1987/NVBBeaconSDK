@@ -5,6 +5,8 @@
 
 target 'NVBBeaconSDK' do    
     pod 'Parse'
+    pod 'CocoaLumberjack'
+
 end
 
 target 'NVBBeaconSDKTests' do

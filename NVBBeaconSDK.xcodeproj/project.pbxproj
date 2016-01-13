@@ -42,8 +42,8 @@
 		0302AF1B1C43CD5E00D411D1 /* AFXMLRequestOperation.h in Headers */ = {isa = PBXBuildFile; fileRef = 0302AF0A1C43CD5E00D411D1 /* AFXMLRequestOperation.h */; };
 		0302AF1C1C43CD5E00D411D1 /* AFXMLRequestOperation.m in Sources */ = {isa = PBXBuildFile; fileRef = 0302AF0B1C43CD5E00D411D1 /* AFXMLRequestOperation.m */; };
 		0302AF1F1C44141600D411D1 /* NVBBeaconSDKPrefix.pch in Headers */ = {isa = PBXBuildFile; fileRef = 0302AF1E1C44141600D411D1 /* NVBBeaconSDKPrefix.pch */; };
-		0401CBEE1C4006B400332CC0 /* NVBLogger.h in Headers */ = {isa = PBXBuildFile; fileRef = 0401CBEC1C4006B400332CC0 /* NVBLogger.h */; };
-		0401CBEF1C4006B400332CC0 /* NVBLogger.m in Sources */ = {isa = PBXBuildFile; fileRef = 0401CBED1C4006B400332CC0 /* NVBLogger.m */; };
+		03A06AB31C45A1BE0075288A /* NVBCustomFormatter.h in Headers */ = {isa = PBXBuildFile; fileRef = 03A06AB11C45A1BE0075288A /* NVBCustomFormatter.h */; };
+		03A06AB41C45A1BE0075288A /* NVBCustomFormatter.m in Sources */ = {isa = PBXBuildFile; fileRef = 03A06AB21C45A1BE0075288A /* NVBCustomFormatter.m */; };
 		0498F1651C3D422400D45983 /* NVBBeaconSDK.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0498F15A1C3D422400D45983 /* NVBBeaconSDK.framework */; };
 		0498F16A1C3D422400D45983 /* NVBBeaconSDKTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 0498F1691C3D422400D45983 /* NVBBeaconSDKTests.m */; };
 		0498F17F1C3D491F00D45983 /* NVBHTTPClient.h in Headers */ = {isa = PBXBuildFile; fileRef = 0498F17D1C3D491F00D45983 /* NVBHTTPClient.h */; };
@@ -99,8 +99,8 @@
 		0302AF0A1C43CD5E00D411D1 /* AFXMLRequestOperation.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AFXMLRequestOperation.h; sourceTree = "<group>"; };
 		0302AF0B1C43CD5E00D411D1 /* AFXMLRequestOperation.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = AFXMLRequestOperation.m; sourceTree = "<group>"; };
 		0302AF1E1C44141600D411D1 /* NVBBeaconSDKPrefix.pch */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = NVBBeaconSDKPrefix.pch; sourceTree = "<group>"; };
-		0401CBEC1C4006B400332CC0 /* NVBLogger.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = NVBLogger.h; sourceTree = "<group>"; };
-		0401CBED1C4006B400332CC0 /* NVBLogger.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = NVBLogger.m; sourceTree = "<group>"; };
+		03A06AB11C45A1BE0075288A /* NVBCustomFormatter.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = NVBCustomFormatter.h; sourceTree = "<group>"; };
+		03A06AB21C45A1BE0075288A /* NVBCustomFormatter.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = NVBCustomFormatter.m; sourceTree = "<group>"; };
 		0498F15A1C3D422400D45983 /* NVBBeaconSDK.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = NVBBeaconSDK.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		0498F15F1C3D422400D45983 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		0498F1641C3D422400D45983 /* NVBBeaconSDKTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = NVBBeaconSDKTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -210,8 +210,8 @@
 				0302AED71C43C23D00D411D1 /* UIImageView+AFNetworking.m */,
 				0302AED81C43C23D00D411D1 /* UIView+NVBAnimations.h */,
 				0302AED91C43C23D00D411D1 /* UIView+NVBAnimations.m */,
-				0401CBEC1C4006B400332CC0 /* NVBLogger.h */,
-				0401CBED1C4006B400332CC0 /* NVBLogger.m */,
+				03A06AB11C45A1BE0075288A /* NVBCustomFormatter.h */,
+				03A06AB21C45A1BE0075288A /* NVBCustomFormatter.m */,
 			);
 			path = Utilities;
 			sourceTree = "<group>";
@@ -307,12 +307,12 @@
 				0302AEDC1C43C23D00D411D1 /* UIView+NVBAnimations.h in Headers */,
 				0302AF171C43CD5E00D411D1 /* AFPropertyListRequestOperation.h in Headers */,
 				0302AEDA1C43C23D00D411D1 /* UIImageView+AFNetworking.h in Headers */,
+				03A06AB31C45A1BE0075288A /* NVBCustomFormatter.h in Headers */,
 				0498F1891C3D6A7B00D45983 /* NVBBeaconSDK.h in Headers */,
 				0498F17F1C3D491F00D45983 /* NVBHTTPClient.h in Headers */,
 				0302AF0C1C43CD5E00D411D1 /* AFHTTPClient.h in Headers */,
 				0302AEE21C43C25900D411D1 /* NVBNotificationView.h in Headers */,
 				0302AF1B1C43CD5E00D411D1 /* AFXMLRequestOperation.h in Headers */,
-				0401CBEE1C4006B400332CC0 /* NVBLogger.h in Headers */,
 				0302AF1F1C44141600D411D1 /* NVBBeaconSDKPrefix.pch in Headers */,
 				0302AEEC1C43C43400D411D1 /* NVBBeaconMonitoringService.h in Headers */,
 				0302AED41C43C22D00D411D1 /* NVBShowBeacon.h in Headers */,
@@ -459,7 +459,6 @@
 				0302AED51C43C22D00D411D1 /* NVBShowBeacon.m in Sources */,
 				0302AEED1C43C43400D411D1 /* NVBBeaconMonitoringService.m in Sources */,
 				0302AF1A1C43CD5E00D411D1 /* AFURLConnectionOperation.m in Sources */,
-				0401CBEF1C4006B400332CC0 /* NVBLogger.m in Sources */,
 				0302AF0D1C43CD5E00D411D1 /* AFHTTPClient.m in Sources */,
 				0302AF181C43CD5E00D411D1 /* AFPropertyListRequestOperation.m in Sources */,
 				0498F1801C3D491F00D45983 /* NVBHTTPClient.m in Sources */,
@@ -471,6 +470,7 @@
 				0302AEDB1C43C23D00D411D1 /* UIImageView+AFNetworking.m in Sources */,
 				0302AEDD1C43C23D00D411D1 /* UIView+NVBAnimations.m in Sources */,
 				0302AF0F1C43CD5E00D411D1 /* AFHTTPRequestOperation.m in Sources */,
+				03A06AB41C45A1BE0075288A /* NVBCustomFormatter.m in Sources */,
 				0302AF131C43CD5E00D411D1 /* AFJSONRequestOperation.m in Sources */,
 				0302AEEF1C43C43400D411D1 /* NVBDataStore.m in Sources */,
 			);

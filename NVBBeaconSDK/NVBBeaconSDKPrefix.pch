@@ -11,6 +11,11 @@
 
 #define APP_FOREGROUND @"APP_FOREGROUND"
 
+#define LOG_LEVEL_DEF ddLogLevel
+#import <CocoaLumberjack/CocoaLumberjack.h>
 
+static DDLogLevel ddLogLevel = DDLogLevelDebug;
+
+#define IS_IOS8 ([[[UIDevice currentDevice] systemVersion] floatValue] >= 8.0)
 
 #endif /* NVBBeaconSDKPrefix_pch */

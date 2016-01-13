@@ -14,48 +14,20 @@
 #import "NVBShowBeacon.h"
 #import "NVBBeaconSDKPrefix.pch" //to be taken out to check if it works without this as well
 
-#define ESTIMOTE_UUID @"B9407F30-F5F8-466E-AFF9-25556B57FE6D"
-
-#define INVIBE_REGION1 @"com.invibe.12508"
-#define INVIBE_REGION2 @"com.invibe.22114"
-#define INVIBE_REGION3 @"com.invibe.35052"
-
-#define INVIBE_REGION4 @"com.invibe.13686"
-#define INVIBE_REGION5 @"com.invibe.32831"
-#define INVIBE_REGION6 @"com.invibe.52584"
-#define INVIBE_REGION7 @"com.invibe.55482"
-#define INVIBE_REGION8 @"com.invibe.44282"
-#define INVIBE_REGION9 @"com.invibe.46499"
-#define INVIBE_REGION10 @"com.invibe.51752"
-
-
-
 @interface NVBBeaconMonitoringService()
 {
 }
 
-@property (strong, nonatomic) CLLocationManager* locationManager;
-@property (strong, nonatomic) CLBeaconRegion *beaconRegion1;
-@property (strong, nonatomic) CLBeaconRegion *beaconRegion2;
-@property (strong, nonatomic) CLBeaconRegion *beaconRegion3;
-@property (strong, nonatomic) CLBeaconRegion *beaconRegion4;
+@property (strong, nonatomic) CLLocationManager* locationManager;//we have our own instance of location manager for handling the beacons interaction
 
-@property (strong, nonatomic) CLBeaconRegion *beaconRegion5;
-@property (strong, nonatomic) CLBeaconRegion *beaconRegion6;
-@property (strong, nonatomic) CLBeaconRegion *beaconRegion7;
-@property (strong, nonatomic) CLBeaconRegion *beaconRegion8;
-@property (strong, nonatomic) CLBeaconRegion *beaconRegion9;
-@property (strong, nonatomic) CLBeaconRegion *beaconRegion10;
+@property (strong, nonatomic) NSMutableArray* pendingBeacons;//beacons discovered but yet retrieved information from the server
+@property (strong, nonatomic) NSMutableArray* confirmedBecons; //beacons for info was received and the view wasn't dismissed
+@property (strong, nonatomic) NSMutableArray* bannedBeacons; //beacons which were dismissed form the promotion view
 
+@property (assign, nonatomic) BOOL notificationViewIsShown; //signalling if the notification view was already shown or not
+@property (strong, nonatomic) NSMutableDictionary* dictVisibility;//used to keep track which of the promotions was shown for a beacon
 
-@property (strong, nonatomic) NSMutableArray* pendingBeacons;
-@property (strong, nonatomic) NSMutableArray* confirmedBecons;
-@property (strong, nonatomic) NSMutableArray* bannedBeacons;
-@property (assign, nonatomic) BOOL notificationViewIsShown;
-@property (assign, nonatomic) BOOL blockNotifications;
-@property (strong, nonatomic) CBCentralManager* bluetoothManager;
-
-@property (strong, nonatomic) NSMutableDictionary* dictVisibility;
+@property (strong, nonatomic) CBCentralManager* bluetoothManager;//used for being notified if bluetooth is off or not
 
 @end
 
@@ -79,31 +51,131 @@
     }
     
     self.dictVisibility = [[NSMutableDictionary alloc] init];
-    
     return self;
 }
 
 
-
+/**
+ * Method which deals with starting the beacon discovery process
+ */
 -(void) startServices
 {
-    _locationManager = [[CLLocationManager alloc] init];
-    _pendingBeacons = [[NSMutableArray alloc] init];
-    _confirmedBecons = [[NSMutableArray alloc] init];
-    _bannedBeacons = [[NSMutableArray alloc] init];
-    
+    DDLogDebug (@"getRegisteredBeacons enter ");
     [self checkBluetooth];
-    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(updateBeacons) name:@"updateInternalBadgeNotification" object:nil];
+    
+    //initialising controls
+    self.pendingBeacons = [[NSMutableArray alloc] init];
+    self.confirmedBecons = [[NSMutableArray alloc] init];
+    self.bannedBeacons = [[NSMutableArray alloc] init];
+    
+    self.locationManager = [[CLLocationManager alloc] init];
     self.locationManager.delegate = self;
     self.locationManager.desiredAccuracy = kCLLocationAccuracyNearestTenMeters; // 10 m
     
+    //to be taken out sa vad de nu trebuie scoasa
+    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(updateBeacons) name:@"updateInternalBadgeNotification" object:nil];
     
     //retrieving the beacons which we will be monitoring
-    [[NVBDataStore sharedInstance] getRegisteredBeacons:^(NVBBeacon *beacon, NSString *error) {
-        
-    }];
+    [[NVBDataStore sharedInstance] getRegisteredBeacons:^(NSArray *responseArrayList, NSString *error) {
+        if (responseArrayList)
+            DDLogDebug (@"Setting up monitoring for %ld regions", responseArrayList.count );
+        for (NVBBeacon* beacon in responseArrayList)
+            [self setupRegion:beacon];
+   }];
+    
+    
 }
 
+
+/**
+ * Method which starts monitoring for a beacon once a beacon object was received from the server
+ */
+
+- (void)setupRegion: (NVBBeacon*) beacon {
+    //retrivegin the uuid for the estimote beacon
+    NSUUID *uuid = [[NSUUID alloc] initWithUUIDString:beacon.uuid];
+    
+    
+    //start monitoring for events for that particular region
+    
+    CLBeaconRegion* beaconRegion = [[CLBeaconRegion alloc] initWithProximityUUID:uuid major:[beacon.major integerValue] minor:[beacon minor] identifier:[NSString stringWithFormat:@"com.invibe.%@", [beacon promoIdentifier]]];
+    beaconRegion.notifyEntryStateOnDisplay = YES;
+    beaconRegion.notifyOnEntry = YES;
+    beaconRegion.notifyOnExit = YES;
+    
+    [self.locationManager startMonitoringForRegion:beaconRegion];
+    [self locationManager:self.locationManager didStartMonitoringForRegion:beaconRegion];
+    
+}
+
+
+-(void) resetVisibilityWithRegion:(CLRegion*)region
+{
+    DDLogDebug (@"Enter for region %@", region.identifier );
+    
+    self.dictVisibility[region.identifier] = [[NVBShowBeacon alloc] init];
+    
+    NSString* strIdentifier = region.identifier;
+    NSArray* arr = [strIdentifier componentsSeparatedByString:@"."];
+    NSString* regionMajorIdentifier = arr[2];
+    
+    NSMutableArray* arrToBeDeleted = [[NSMutableArray alloc] init];
+    
+    
+    for (int i = 0; i < self.confirmedBecons.count; i++)
+    {
+        NVBBeacon* tempBeacon = [self.confirmedBecons objectAtIndex:i];
+        
+        if ([[tempBeacon beaconIdentifier] integerValue] == [regionMajorIdentifier integerValue])
+        {
+            [arrToBeDeleted addObject:[NSNumber numberWithInteger:i]];
+        }
+    }
+    
+    for (int j = 0; j < arrToBeDeleted.count; j++)
+    {
+        [self.confirmedBecons removeObjectAtIndex:[arrToBeDeleted[j] integerValue]];
+    }
+    
+}
+
+
+-(void) updateBeacons
+{
+    if (self.bluetoothManager)
+    {
+        switch (self.bluetoothManager.state)
+        {
+            case CBCentralManagerStatePoweredOn:
+            {
+                NSLog (@"Bluetooth is on so all good");
+                break;
+            }
+            default:
+            {
+                NSLog (@"we are unsubscribing from lal because bluetooth is turned off ");
+                [self unsubscribeFromInvibe:nil withCompletionBlock:nil];
+                break;
+            }
+        }
+        
+        return;
+    }
+    
+}
+
+#pragma mark Bluetooth Central Manager related
+
+/////////////////////////////////////////////////////////////////
+/*
+ * Methods related to the Bluetooth Manager
+ */
+/////////////////////////////////////////////////////////////////
+
+
+/**
+ * Initialising the bluetooth manager in order to see if its active or not
+ */
 -(void) checkBluetooth
 {
     static dispatch_once_t onceToken;
@@ -113,6 +185,10 @@
     });
 }
 
+/**
+ * Getting notifications about the bluetooth state
+ */
+ 
 - (void)centralManagerDidUpdateState:(CBCentralManager *)central
 {
     NSString *stateString = nil;
@@ -154,164 +230,48 @@
         default: stateString = @"State unknown, update imminent."; break;
     }
     
-    NSLog (@" avem state %@ ", stateString);
+    DDLogDebug (@" Updated with state %@ ", stateString);
 }
 
 
+
+#pragma mark Location Manager related
+
+/////////////////////////////////////////////////////////////////
+/*
+ * Methods related to the Location Manager
+ */
+/////////////////////////////////////////////////////////////////
 
 
 - (void)locationManager:(CLLocationManager *)manager didChangeAuthorizationStatus:(CLAuthorizationStatus)status
 {
-    NSLog (@"status is %d", status);
+    DDLogDebug (@"new status is %d", status);
     
     if ((status == kCLAuthorizationStatusNotDetermined)  || (status == kCLAuthorizationStatusDenied)
         || (status == kCLAuthorizationStatusAuthorizedAlways) || (status == kCLAuthorizationStatusAuthorizedWhenInUse))
     {
- 
-        //to be taken out
-//        [self initRegion];
-//        [self locationManager:self.locationManager didStartMonitoringForRegion:self.beaconRegion1];
-//        [self locationManager:self.locationManager didStartMonitoringForRegion:self.beaconRegion2];
-//        [self locationManager:self.locationManager didStartMonitoringForRegion:self.beaconRegion3];
-//        [self locationManager:self.locationManager didStartMonitoringForRegion:self.beaconRegion4];
-//        [self locationManager:self.locationManager didStartMonitoringForRegion:self.beaconRegion5];
-//        [self locationManager:self.locationManager didStartMonitoringForRegion:self.beaconRegion6];
-//        [self locationManager:self.locationManager didStartMonitoringForRegion:self.beaconRegion7];
-//        [self locationManager:self.locationManager didStartMonitoringForRegion:self.beaconRegion8];
-//        [self locationManager:self.locationManager didStartMonitoringForRegion:self.beaconRegion9];
-//        [self locationManager:self.locationManager didStartMonitoringForRegion:self.beaconRegion10];
     }
 }
-
 
 - (void)locationManager:(CLLocationManager *)manager didStartMonitoringForRegion:(CLRegion *)region {
     [self.locationManager requestStateForRegion:region];
 }
 
-- (void)initRegion {
-    //retrivegin the uuid for the estimote beacon
-    NSUUID *uuid = [[NSUUID alloc] initWithUUIDString:ESTIMOTE_UUID];
-    
-    
-    //defining our region for tracking
-    
-    
-    if ([[UIApplication sharedApplication] backgroundRefreshStatus] == UIBackgroundRefreshStatusAvailable) {
-        
-        NSLog(@"Background updates are available for the app.");
-    }else if([[UIApplication sharedApplication] backgroundRefreshStatus] == UIBackgroundRefreshStatusDenied)
-    {
-        NSLog(@"The user explicitly disabled background behavior for this app or for the whole system.");
-    }else if([[UIApplication sharedApplication] backgroundRefreshStatus] == UIBackgroundRefreshStatusRestricted)
-    {
-        NSLog(@"Background updates are unavailable and the user cannot enable them again. For example, this status can occur when parental controls are in effect for the current user.");
-    }
-    
-    //start monitoring for events for that particular region
-    self.beaconRegion1 = [[CLBeaconRegion alloc] initWithProximityUUID:uuid major:12508 identifier:INVIBE_REGION1];
-    self.beaconRegion1.notifyEntryStateOnDisplay = YES;
-    self.beaconRegion1.notifyOnEntry = YES;
-    self.beaconRegion1.notifyOnExit = YES;
-    
-    [self.locationManager startMonitoringForRegion:self.beaconRegion1];
-    
-    //region 2
-    
-    self.beaconRegion2 = [[CLBeaconRegion alloc] initWithProximityUUID:uuid major:22114 identifier:INVIBE_REGION2];
-    self.beaconRegion2.notifyEntryStateOnDisplay = YES;
-    self.beaconRegion2.notifyOnEntry = YES;
-    self.beaconRegion2.notifyOnExit = YES;
-    
-    [self.locationManager startMonitoringForRegion:self.beaconRegion2];
-    
-    //region 3
-    
-    self.beaconRegion3 = [[CLBeaconRegion alloc] initWithProximityUUID:uuid major:35052 identifier:INVIBE_REGION3];
-    self.beaconRegion3.notifyEntryStateOnDisplay = YES;
-    self.beaconRegion3.notifyOnEntry = YES;
-    self.beaconRegion3.notifyOnExit = YES;
-    
-    [self.locationManager startMonitoringForRegion:self.beaconRegion3];
-    
-    //region 4
-    
-    self.beaconRegion4 = [[CLBeaconRegion alloc] initWithProximityUUID:uuid major:13686 identifier:INVIBE_REGION4];
-    self.beaconRegion4.notifyEntryStateOnDisplay = YES;
-    self.beaconRegion4.notifyOnEntry = YES;
-    self.beaconRegion4.notifyOnExit = YES;
-    
-    [self.locationManager startMonitoringForRegion:self.beaconRegion4];
-    
-    //region 5
-    
-    self.beaconRegion5 = [[CLBeaconRegion alloc] initWithProximityUUID:uuid major:32831 identifier:INVIBE_REGION5];
-    self.beaconRegion5.notifyEntryStateOnDisplay = YES;
-    self.beaconRegion5.notifyOnEntry = YES;
-    self.beaconRegion5.notifyOnExit = YES;
-    
-    [self.locationManager startMonitoringForRegion:self.beaconRegion5];
-    
-    //region 6
-    
-    self.beaconRegion6 = [[CLBeaconRegion alloc] initWithProximityUUID:uuid major:52584 identifier:INVIBE_REGION6];
-    self.beaconRegion6.notifyEntryStateOnDisplay = YES;
-    self.beaconRegion6.notifyOnEntry = YES;
-    self.beaconRegion6.notifyOnExit = YES;
-    
-    [self.locationManager startMonitoringForRegion:self.beaconRegion6];
-    
-    
-    //region 7
-    
-    self.beaconRegion7 = [[CLBeaconRegion alloc] initWithProximityUUID:uuid major:55482 identifier:INVIBE_REGION7];
-    self.beaconRegion7.notifyEntryStateOnDisplay = YES;
-    self.beaconRegion7.notifyOnEntry = YES;
-    self.beaconRegion7.notifyOnExit = YES;
-    
-    [self.locationManager startMonitoringForRegion:self.beaconRegion7];
-    
-    
-    //region 8
-    
-    self.beaconRegion8 = [[CLBeaconRegion alloc] initWithProximityUUID:uuid major:44282 identifier:INVIBE_REGION8];
-    self.beaconRegion8.notifyEntryStateOnDisplay = YES;
-    self.beaconRegion8.notifyOnEntry = YES;
-    self.beaconRegion8.notifyOnExit = YES;
-    
-    [self.locationManager startMonitoringForRegion:self.beaconRegion8];
-    
-    //region 9
-    
-    self.beaconRegion9 = [[CLBeaconRegion alloc] initWithProximityUUID:uuid major:46499 identifier:INVIBE_REGION9];
-    self.beaconRegion9.notifyEntryStateOnDisplay = YES;
-    self.beaconRegion9.notifyOnEntry = YES;
-    self.beaconRegion9.notifyOnExit = YES;
-    
-    [self.locationManager startMonitoringForRegion:self.beaconRegion9];
-    
-    //region 10
-    
-    self.beaconRegion10 = [[CLBeaconRegion alloc] initWithProximityUUID:uuid major:51752 identifier:INVIBE_REGION10];
-    self.beaconRegion10.notifyEntryStateOnDisplay = YES;
-    self.beaconRegion10.notifyOnEntry = YES;
-    self.beaconRegion10.notifyOnExit = YES;
-    
-    [self.locationManager startMonitoringForRegion:self.beaconRegion10];
-    
-}
 
+
+#pragma mark Beacons
+
+/////////////////////////////////////////////////////////////////
+/*
+ * Methods related to beacon detection events
+ */
+/////////////////////////////////////////////////////////////////
 
 
 - (void)locationManager:(CLLocationManager *)manager didEnterRegion:(CLRegion *)region {
     
-    //to be taken out
-    //[self scheduleLocalNotification:@"Enter region1"];
-    
-    //to be taken out new new
-    //        [self resetVisibilityWithRegion:region];
-    
-    
-    
+    DDLogDebug(@"Enter for region %@ ", region.identifier);
     
     NSMutableDictionary* dict = [[NSMutableDictionary alloc] init];
     dict[@"text"] = @"enter";
@@ -336,13 +296,8 @@
 
 - (void)locationManager:(CLLocationManager *)manager didDetermineState:(CLRegionState)state forRegion:(CLRegion *)region{
     if (state == CLRegionStateInside) {
+        DDLogDebug(@"Inside for region %@ ", region.identifier);
         //Start Ranging
-        //to be taken out
-        //[self scheduleLocalNotification:@"Enter region"];
-        
-        //to be taken out new new
-        //        [self resetVisibilityWithRegion:region];
-        
         NSString* strIdentifier = region.identifier;
         NSArray* arr = [strIdentifier componentsSeparatedByString:@"."];
         NSString* regionMajorIdentifier = arr[2];
@@ -360,6 +315,7 @@
     }
     else{
         //Stop Ranging
+        DDLogDebug(@"Outside for region %@ ", region.identifier);
         [self resetVisibilityWithRegion:region];
         
         NSString* strIdentifier = region.identifier;
@@ -374,6 +330,7 @@
 
 -(void)locationManager:(CLLocationManager *)manager didExitRegion:(CLRegion *)region {
     @try {
+        DDLogDebug(@"Outside for region %@ ", region.identifier);
         
         NSMutableDictionary* dict = [[NSMutableDictionary alloc] init];
         dict[@"text"] = @"exit";
@@ -407,12 +364,12 @@
                     }
                     else
                     {
-                        NSLog(@" Notification view is already shown so we don't do anything");
+                        DDLogDebug(@" Notification view is already shown so we don't do anything");
                     }
                 }
                 else
                 {
-                    NSLog(@" Exit promotion is nil");
+                    DDLogError(@" Exit promotion is nil");
                 }
             }
         }
@@ -423,7 +380,7 @@
         }
         else
         {
-            NSLog (@"For some reasons the beacon region was null so we abort");
+            DDLogError (@"For some reasons the beacon region was null so we abort");
         }
         
         
@@ -431,44 +388,15 @@
         
     }
     @catch (NSException *exception) {
-        NSLog (@"Exception in did exit region %@", exception);
+        DDLogError (@"Exception %@", exception);
     }
 }
 
 
--(void) resetVisibilityWithRegion:(CLRegion*)region
-{
-    self.dictVisibility[region.identifier] = [[NVBShowBeacon alloc] init];
-    
-    NSString* strIdentifier = region.identifier;
-    NSArray* arr = [strIdentifier componentsSeparatedByString:@"."];
-    NSString* regionMajorIdentifier = arr[2];
-    
-    NSMutableArray* arrToBeDeleted = [[NSMutableArray alloc] init];
-    
-    
-    for (int i = 0; i < self.confirmedBecons.count; i++)
-    {
-        NVBBeacon* tempBeacon = [self.confirmedBecons objectAtIndex:i];
-        
-        if ([[tempBeacon beaconIdentifier] integerValue] == [regionMajorIdentifier integerValue])
-        {
-            [arrToBeDeleted addObject:[NSNumber numberWithInteger:i]];
-        }
-    }
-    
-    for (int j = 0; j < arrToBeDeleted.count; j++)
-    {
-        [self.confirmedBecons removeObjectAtIndex:[arrToBeDeleted[j] integerValue]];
-    }
-    
-}
+
 
 -(void)locationManager:(CLLocationManager *)manager didRangeBeacons:(NSArray *)beacons inRegion:(CLBeaconRegion *)region {
     //beacons found in the region
-    
-
-    
     for (int i = 0; i < beacons.count; i++)
     {
         CLBeacon* beacon = [beacons objectAtIndex:i];
@@ -500,15 +428,15 @@
                         
                         if (tempBeacon.proximity == CLProximityImmediate)
                         {
-                            NSLog(@"We update with state immediate");
+                            DDLogDebug(@"We update with state immediate");
                             if (tempBeacon.immediatePromotion == nil)
                             {
-                                NSLog(@"We have no immediate state");
+                                DDLogDebug(@"We have no immediate state");
                                 continue;
                             }
                             if (((NVBShowBeacon*)self.dictVisibility[region.identifier]).hideImmediate == YES)
                             {
-                                NSLog(@"We already shown near so we move on");
+                                DDLogDebug(@"We already shown near so we move on");
                                 continue;
                             }
                             
@@ -516,7 +444,7 @@
                             [beaconNotificationView updateWithPromotion:tempBeacon andPromotion:tempBeacon.immediatePromotion];
                             beaconNotificationView.notificationSuccessfullRedirection = ^()
                             {
-                                NSLog(@"Notification view when changing immediate near far is successfully redirecte");
+                                DDLogDebug(@"Notification view when changing immediate near far is successfully redirecte");
                                 self.notificationViewIsShown = NO;
                                 ((NVBShowBeacon*)self.dictVisibility[region.identifier]).hideImmediate = YES;
                             };
@@ -524,21 +452,21 @@
                         }
                         if (tempBeacon.proximity == CLProximityNear)
                         {
-                            NSLog(@"We update with state near");
+                            DDLogDebug(@"We update with state near");
                             [beaconNotificationView updateWithPromotion:tempBeacon andPromotion:tempBeacon.nearPromotion];
                             if (tempBeacon.nearPromotion == nil)
                             {
-                                NSLog(@"We have no near state");
+                                DDLogDebug(@"We have no near state");
                                 continue;
                             }
                             if (((NVBShowBeacon*)self.dictVisibility[region.identifier]).hideNear == YES)
                             {
-                                NSLog(@"We already shown near so we move on");
+                                DDLogDebug(@"We already shown near so we move on");
                                 continue;
                             }
                             beaconNotificationView.notificationSuccessfullRedirection = ^()
                             {
-                                NSLog(@"Notification view when changing immediate near far is successfully redirecte");
+                                DDLogDebug(@"Notification view when changing immediate near far is successfully redirecte");
                                 self.notificationViewIsShown = NO;
                                 ((NVBShowBeacon*)self.dictVisibility[region.identifier]).hideNear = YES;
                             };
@@ -546,23 +474,23 @@
                         }
                         if (tempBeacon.proximity == CLProximityFar)
                         {
-                            NSLog(@"We update with state far");
+                            DDLogDebug(@"We update with state far");
                             [beaconNotificationView updateWithPromotion:tempBeacon andPromotion:tempBeacon.farPromotion];
                             
                             if (tempBeacon.farPromotion == nil)
                             {
-                                NSLog(@"We have no far state");
+                                DDLogDebug(@"We have no far state");
                                 continue;
                             }
                             if (((NVBShowBeacon*)self.dictVisibility[region.identifier]).hideFar == YES)
                             {
-                                NSLog(@"We already shown near so we move on");
+                                DDLogDebug(@"We already shown near so we move on");
                                 continue;
                             }
                             
                             beaconNotificationView.notificationSuccessfullRedirection = ^()
                             {
-                                NSLog(@"Notification view when changing immediate near far is successfully redirecte");
+                                DDLogDebug(@"Notification view when changing immediate near far is successfully redirecte");
                                 self.notificationViewIsShown = NO;
                                 ((NVBShowBeacon*)self.dictVisibility[region.identifier]).hideFar = YES;
                             };
@@ -571,7 +499,7 @@
                         
                         beaconNotificationView.notificationViewDismissActionBlock = ^()
                         {
-                            NSLog(@"Notification view when changing immediate near far was dismissed");
+                            DDLogDebug(@"Notification view when changing immediate near far was dismissed");
                             self.notificationViewIsShown = NO;
                             [self.bannedBeacons addObject:tempBeacon];
                             [self.confirmedBecons removeObject:tempBeacon];
@@ -583,7 +511,7 @@
                     }
                     else
                     {
-                        NSLog(@"We had a new state but we dont show it because the view is already shown");
+                        DDLogDebug(@"We had a new state but we dont show it because the view is already shown");
                     }
                     
                     break;
@@ -605,15 +533,12 @@
         {
             [self.pendingBeacons addObject:myBeacon];
             //it a new new beacon so we retrieve the info from the server
-            NSLog (@"NVBBeaconMonitoringService we found a new beacon with major %@ and minor %@", beacon.major, beacon.minor);
+            DDLogDebug (@"We found a new beacon with major %@ and minor %@", beacon.major, beacon.minor);
             
             [self getPromotions:myBeacon];
             
         }
     }
-    
-    
-    
 }
 
 
@@ -719,22 +644,25 @@
 }
 
 
+/**
+ * Method which retrieves the promotions for a specific beacon
+ */
 -(void) getPromotions:(NVBBeacon*) latestBeacon
 
 {
-    NSLog(@"Enter");
+    DDLogDebug(@"Enter");
     [[NVBDataStore sharedInstance] getPromotionsWithBeaconId:[latestBeacon promoIdentifier] onCompletion:^(NVBBeacon *beaconResponse, NSString* error) {
         if (error != nil)
         {
-            NSLog (@" Error while getting the invitations so we remove it from pending so we can try again later %@", error);
-            [self.pendingBeacons removeObject:latestBeacon];
+            DDLogError (@" Error while getting the invitations so we remove it from pending so we can try again later %@", error);
+            [self.pendingBeacons removeObject:latestBeacon];//we remove it from pending since we received a reply for it
         }
         else
         {
             [self.confirmedBecons addObject:latestBeacon];
             [self.pendingBeacons removeObject:latestBeacon];
             
-            NSLog (@" We received invitations for beacon %@ and we move it to confirmed",[latestBeacon beaconIdentifier]);
+            DDLogDebug (@" We received invitations for beacon %@ and we move it to confirmed",[latestBeacon beaconIdentifier]);
             latestBeacon.enterPromotion = beaconResponse.enterPromotion;
             latestBeacon.exitPromotion = beaconResponse.exitPromotion;
             latestBeacon.nearPromotion = beaconResponse.nearPromotion;
@@ -748,25 +676,14 @@
             
             if (latestBeacon.enterPromotion == nil)
             {
-                NSLog (@"We have no enter region promotions ");
+                DDLogDebug (@"We have no enter region promotions ");
                 return;
             }
-            
-            //            if (self.blockNotifications == NO)
-            //            {
-            //                self.blockNotifications = YES;
-            //
-            //                                [self scheduleLocalNotification:[NSString stringWithFormat:@"Welcome to %@, swipe to enjoy the best inVibe gifts", latestBeacon.enterPromotion.title]];
-            //                dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(15 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-            //                    self.blockNotifications = NO;
-            //                });
-            //
-            //            }
             
             //we show it only if it wasnt shown before
             if (self.notificationViewIsShown == NO)
             {
-                NSLog (@" The overlay was not shown so we can show it");
+                DDLogDebug (@" The overlay was not shown so we can show it");
                 
                 self.notificationViewIsShown = YES;
                 NVBNotificationView* beaconNotificationView;
@@ -782,7 +699,7 @@
                 [beaconNotificationView updateWithPromotion:latestBeacon andPromotion:latestBeacon.enterPromotion];
                 beaconNotificationView.notificationViewDismissActionBlock = ^()
                 {
-                    NSLog (@"Dismiss was pressed so we move to banned for %@", [latestBeacon beaconIdentifier]);
+                    DDLogDebug (@"Dismiss was pressed so we move to banned for %@", [latestBeacon beaconIdentifier]);
                     self.notificationViewIsShown = NO;
                     [self.bannedBeacons addObject:latestBeacon];
                     [self.confirmedBecons removeObject:latestBeacon];
@@ -790,7 +707,7 @@
                 
                 beaconNotificationView.notificationSuccessfullRedirection = ^()
                 {
-                    NSLog (@"Ok was pressed for %@", [latestBeacon beaconIdentifier]);
+                    DDLogDebug (@"Ok was pressed for %@", [latestBeacon beaconIdentifier]);
                     //we show the accept gift screen
                     self.notificationViewIsShown = NO;
                     
@@ -801,44 +718,15 @@
             else
             {
             }
-            
-            //            UIApplicationState state = [UIApplication sharedApplication].applicationState;
-            //            if (state == UIApplicationStateBackground)
-            //            {
-            //                [self scheduleLocalNotification:[NSString stringWithFormat:
-            //                                                     @"Congrats.. You got a gift!\nGo to your close %@ and redeem it!", beaconResponse.venue_name]];
-            //            }
         }
     }];
     
 }
 
--(void) updateBeacons
-{
-    if (self.bluetoothManager)
-    {
-        switch (self.bluetoothManager.state)
-        {
-            case CBCentralManagerStatePoweredOn:
-            {
-                NSLog (@"Bluetooth is on so all good");
-                break;
-            }
-            default:
-            {
-                NSLog (@"we are unsubscribing from lal because bluetooth is turned off ");
-                [self unsubscribeFromInvibe:nil withCompletionBlock:nil];
-                break;
-            }
-        }
-        
-        return;
-    }
-    
-}
 
-
-
+/**
+ * Method used to subscribe to a channel/beacon. Used for push notifications and backend analytics
+ */
 - (void) subscribeToInvibeWithChannel: (NSString*) channel withCompletionBlock:(booleanSuccessBlock)completionBlock
 {
     if (channel) {
@@ -855,19 +743,23 @@
                 [[NVBDataStore sharedInstance] subscribeToInvibeWithChannel:channel onCompletion:^(BOOL success, NSString *error) {
                     if (error)
                     {
-                        NSLog(@"NVBRealTimeMessagingProxy: PubNub: subscription error: %@ ",error);
+                        DDLogError(@"subscription error: %@ ",error);
                     }
                 }];
                 
             }
         } else {
-            NSLog(@"NVBRealTimeMessagingProxy: PubNub: channels array is nil!");
+            DDLogError(@"Channels array is nil!");
         }
     } else {
-        NSLog(@"NVBRealTimeMessagingProxy: PubNub: subscribeToInvibeWithChannel: userToken is nil!");
+        DDLogError(@"Channel is nil!");
     }
 }
 
+
+/**
+ * Method used to unsubscrieb to a channel/beacon. Used for push notifications and backend analytics
+ */
 
 - (void) unsubscribeFromInvibe:(NSString*)pubnubChannel withCompletionBlock:(booleanSuccessBlock)handlerBlock
 {

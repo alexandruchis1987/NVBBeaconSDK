@@ -41,6 +41,9 @@
                 self.major =  [dict valueForKey:@"major"];
             if (dict[@"minor"])
                 self.minor =  [dict valueForKey:@"minor"];
+            if (dict[@"uuid"])
+                self.uuid =  [dict valueForKey:@"uuid"];
+
             
             if ( ([dict valueForKey:@"near_promotion"] != nil) && ([[dict valueForKey:@"near_promotion"] class] != [NSNull class]))
             {
@@ -108,6 +111,8 @@
             self.major = beacon.major;
             self.minor = beacon.minor;
             self.proximity = beacon.proximity;
+            //to be taken out, sa vedem de trebuie uuid aici
+//            self.uuid = beacon.
         }
         else
         {

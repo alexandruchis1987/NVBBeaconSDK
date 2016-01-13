@@ -14,6 +14,7 @@
 
 typedef void(^booleanSuccessBlock)(BOOL success, NSString *error);
 typedef void(^beaconPromotionBlock)(NVBBeacon *beacon, NSString *error);
+typedef void(^arrayListBlock)(NSMutableArray* responseArrayList, NSString *error);
 
 @interface NVBDataStore : AFHTTPClient
 
@@ -26,6 +27,10 @@ typedef void(^beaconPromotionBlock)(NVBBeacon *beacon, NSString *error);
 - (void)startLocationServicesForeground ;
 - (void)startLocationServicesBackground ;
 - (void)stopLocationServices;
+
+
+//methods for session
+//-(void) requestTokenWithClientId:(NSString)
 
 //methods used to subscribe to a beacon or unsubscribe from it (used by the push notification system)
 -(void)unsubscribeFromInvibe:(NSString*) pubnub withCompletion:(booleanSuccessBlock)completion;
@@ -40,7 +45,7 @@ typedef void(^beaconPromotionBlock)(NVBBeacon *beacon, NSString *error);
 - (void)getPromotionsWithBeaconId:(NSString*) beaconId onCompletion:(beaconPromotionBlock)completion;
 
 //method which returns the beacons associated with the current client id
-- (void)getRegisteredBeacons:(beaconPromotionBlock)completion;
+- (void)getRegisteredBeacons:(arrayListBlock)completion;
 
 
 -(void) setApplicationId:(NSString*) applicationId;
@@ -60,6 +65,8 @@ typedef void(^beaconPromotionBlock)(NVBBeacon *beacon, NSString *error);
  */
 + (NSString *)getApplicationId;
 
+
+-(void) enableDebugMode;
 
 
 

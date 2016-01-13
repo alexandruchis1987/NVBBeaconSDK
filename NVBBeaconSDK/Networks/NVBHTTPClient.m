@@ -7,7 +7,6 @@
 //
 
 #import "NVBHTTPClient.h"
-#import "NVBLogger.h"
 
 static NSString *const kBaseUrl = @"http://jsonplaceholder.typicode.com/";
 
