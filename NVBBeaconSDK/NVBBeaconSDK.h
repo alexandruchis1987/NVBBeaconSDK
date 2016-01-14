@@ -26,25 +26,10 @@
 /**
  Sets the clientKey of your application.
  
- @param clientKey The client key of your NVBBeaconSDK application.
+ @param clientKey The client id of your NVBBeaconSDK application that you find your dashboard account.
+  @param clientKey The client secret of your NVBBeaconSDK application that you find your dashboard account.
  */
-+ (void)setApplicationIdentifier:(NSString *)clientKey;
-
-
-
-/*!
- @abstract Starts the entire plaform services. Application Id is checked if it is provided
- */
-
-+ (void) startServices;
-
-
-/*!
- @abstract Stops the entire plaform services.
- */
-
-+ (void) stopServices;
-
++ (void)setClientId:(NSString *)clientId andClientSecret:(NSString*)clientSecret;
 
 
 /*!

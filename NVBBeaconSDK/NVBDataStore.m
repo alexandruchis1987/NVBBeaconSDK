@@ -8,7 +8,7 @@
 #import "NVBDataStore.h"
 #import "NVBCustomFormatter.h"
 
-#define NVB_API_BASE_URL @"http://admin.invibe.me/api/v1/"
+#define NVB_API_BASE_URL @"http://admin.invibe.me/"
 
 
 static NSString * const kInvibeAPIBaseURLString = NVB_API_BASE_URL;
@@ -117,88 +117,50 @@ static NSString * const kInvibeAPIBaseURLString = NVB_API_BASE_URL;
     self.applicationId = applicationId;
 }
 
-#pragma mark Location Services
-/////////////////////////////////////////////////////////////////
-/*
- * Methods related to location services
- */
-/////////////////////////////////////////////////////////////////
-
-
-/**
- * Method used for starting the location services with authorization for receiving updates while being in foreground
- */
-
-- (void)startLocationServicesForeground {
-    DDLogDebug (@"startLocationServicesForegroun");
-    self.locationManager = [[CLLocationManager alloc] init];
-    self.locationManager.delegate = self;
-    self.locationManager.distanceFilter = 25.0f; // whenever we move
-    self.locationManager.desiredAccuracy = kCLLocationAccuracyNearestTenMeters; // 10 m
-    
-    
-    if(IS_IOS8) {
-
-        [self.locationManager requestAlwaysAuthorization];
-    }
-    
-    if ([CLLocationManager locationServicesEnabled]) {
-        //to be taken out nu cred ca ne trebuie updating location
-        [self.locationManager startUpdatingLocation];
-        
-        
-    } else {
-        DDLogError(@"Location services are not enabled");
-    }
-}
-
-
-
-/**
- * Method used for starting the location services with authorization for receiving updates while being in the background as well
- */
-- (void)startLocationServicesBackground {
-    NSLog (@"startLocationServicesBackground");
-    self.locationManager = [[CLLocationManager alloc] init];
-    self.locationManager.delegate = self;
-    self.locationManager.distanceFilter = 25.0f; // whenever we move
-    self.locationManager.desiredAccuracy = kCLLocationAccuracyNearestTenMeters; // 10 m
-    
-    if(IS_IOS8) {
-        [self.locationManager requestAlwaysAuthorization];
-    }
-    
-    if ([CLLocationManager locationServicesEnabled]) {
-        [self.locationManager startMonitoringSignificantLocationChanges];
-    } else {
-        NSLog(@"Location services is not enabled");
-    }
-}
-
-
-/**
- * Method used for stopping the location services
- */
-
-
-- (void)stopLocationServices {
-    [self.locationManager stopUpdatingHeading];
-}
-
-
-
-- (void)locationManager:(CLLocationManager *)manager didChangeAuthorizationStatus:(CLAuthorizationStatus)status
+//method which registers with the system
+- (void)registerWithClientId:(NSString*)clientId andClientSecret:(NSString*)clientSecret andCompletionBlock: (booleanSuccessBlock)completion
 {
-    DDLogDebug(@"status is %d", status);
+    NSDictionary *parameters = @{
+                                 @"client_id" : clientId,
+                                 @"client_secret" : clientSecret,
+                                 
+                                 };
     
+    DDLogDebug (@"Authentication %@ ", parameters);
     
-    if (status == kCLAuthorizationStatusDenied)
-    {
-        DDLogError(@"Location Services permission is denied");
-        [[NSNotificationCenter defaultCenter] postNotificationName:@"LocationDenied" object:nil];
-    }
-}
+    [self postPath:@"api/v1/token/"
+        parameters:parameters success:^(AFHTTPRequestOperation *operation, id responseObject) {
+        
+        DDLogDebug (@"Authentication was successful ");
+        
+        if (responseObject[@"access_token"])
+        {
+            NSString *encodedHeader = [NSString stringWithFormat:@"Bearer %@", responseObject[@"access_token"]];
+            [[NVBDataStore sharedInstance] setDefaultHeader:@"Authorization" value:encodedHeader];
+        }
 
+        completion (YES, nil);
+    } failure:^(AFHTTPRequestOperation *operation, NSError *error) {
+        DDLogDebug (@"Authentication failed %@ ", error);
+        if (error.localizedRecoverySuggestion)
+        {
+            NSDictionary *dictionary = [NSJSONSerialization JSONObjectWithData:[[error.userInfo valueForKey:@"NSLocalizedRecoverySuggestion"]dataUsingEncoding:NSUTF8StringEncoding] options:kNilOptions error:&error];
+            
+            if (dictionary)
+            {
+                if ([dictionary valueForKey:@"error_message"])
+                {
+                    if(completion)completion(nil,[dictionary valueForKey:@"error_message"]);
+                    return;
+                }
+            }
+        }
+        
+        if(completion)completion(nil,@"There was an error performing the authentication");
+        if (error) DDLogError(@" %@",error);
+        
+    }];
+}
 
 
 #pragma mark Channels
@@ -304,7 +266,7 @@ static NSString * const kInvibeAPIBaseURLString = NVB_API_BASE_URL;
 
         DDLogDebug (@"Subscribing to channel %@", parameters);
         
-        [self postPath:@"subscription/subscribe/" parameters:parameters success:^(AFHTTPRequestOperation *operation, id responseObject) {
+        [self postPath:@"/api/v1/subscriptions/" parameters:parameters success:^(AFHTTPRequestOperation *operation, id responseObject) {
             DDLogDebug (@"Subscription successfull");
             
         } failure:^(AFHTTPRequestOperation *operation, NSError *error) {
@@ -329,7 +291,7 @@ static NSString * const kInvibeAPIBaseURLString = NVB_API_BASE_URL;
         DDLogDebug (@"Unsubscribing from channel %@", parameters);
         
         
-        [self postPath:@"subscription/unsubscribe/" parameters:parameters success:^(AFHTTPRequestOperation *operation, id responseObject) {
+        [self postPath:@"api/v1/subscription/unsubscribe/" parameters:parameters success:^(AFHTTPRequestOperation *operation, id responseObject) {
             DDLogDebug (@"Unsubscribe successfull");
         } failure:^(AFHTTPRequestOperation *operation, NSError *error) {
             DDLogDebug (@"Unsubscribe failed %@", error);
@@ -363,7 +325,7 @@ static NSString * const kInvibeAPIBaseURLString = NVB_API_BASE_URL;
     minor = [beaconId substringFromIndex:5];
     
     NSString* path = @"";
-    path = [NSString stringWithFormat:@"communication/?major=%@&minor=%@", major, minor];
+    path = [NSString stringWithFormat:@"/api/v1/communication/?major=%@&minor=%@", major, minor];
     
     [self getPath:path
        parameters:nil
@@ -408,7 +370,7 @@ static NSString * const kInvibeAPIBaseURLString = NVB_API_BASE_URL;
     
     DDLogDebug (@"NotifyCommunicationApi %@ ", parameters);
     
-    [self postPath:[NSString stringWithFormat:@"communication/%@/displayed/", promotion.id] parameters:parameters success:^(AFHTTPRequestOperation *operation, id responseObject) {
+    [self postPath:[NSString stringWithFormat:@"/api/v1/communication/%@/displayed/", promotion.id] parameters:parameters success:^(AFHTTPRequestOperation *operation, id responseObject) {
         
         DDLogDebug (@"NotifyCommunicationApi was successful ");
         
@@ -442,7 +404,7 @@ static NSString * const kInvibeAPIBaseURLString = NVB_API_BASE_URL;
 - (void)getRegisteredBeacons:(arrayListBlock)completion
 {
     DDLogDebug (@"Enter");
-    [self getPath:@"communication/"
+    [self getPath:@"/api/v1/communication/"
        parameters:nil
           success:^(AFHTTPRequestOperation *operation, id responseObject) {
 

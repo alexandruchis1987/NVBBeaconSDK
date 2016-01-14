@@ -26,6 +26,7 @@
 
 @property (assign, nonatomic) BOOL notificationViewIsShown; //signalling if the notification view was already shown or not
 @property (strong, nonatomic) NSMutableDictionary* dictVisibility;//used to keep track which of the promotions was shown for a beacon
+@property (strong, nonatomic) NSMutableArray* arrMonitoredBeacons;//used to keep track which of the promotions was shown for a beacon
 
 @property (strong, nonatomic) CBCentralManager* bluetoothManager;//used for being notified if bluetooth is off or not
 
@@ -72,18 +73,17 @@
     self.locationManager.delegate = self;
     self.locationManager.desiredAccuracy = kCLLocationAccuracyNearestTenMeters; // 10 m
     
+    //to be taken out
+    NSLog (@"avem monitored regions %@ ", self.locationManager.monitoredRegions);
+
+    if(IS_IOS8) {
+        [self.locationManager requestAlwaysAuthorization];
+    }
+    
+    
     //to be taken out sa vad de nu trebuie scoasa
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(updateBeacons) name:@"updateInternalBadgeNotification" object:nil];
-    
-    //retrieving the beacons which we will be monitoring
-    [[NVBDataStore sharedInstance] getRegisteredBeacons:^(NSArray *responseArrayList, NSString *error) {
-        if (responseArrayList)
-            DDLogDebug (@"Setting up monitoring for %ld regions", responseArrayList.count );
-        for (NVBBeacon* beacon in responseArrayList)
-            [self setupRegion:beacon];
-   }];
-    
-    
+
 }
 
 
@@ -97,11 +97,14 @@
     
     
     //start monitoring for events for that particular region
+    CLBeaconRegion* beaconRegion = [[CLBeaconRegion alloc] initWithProximityUUID:uuid major:[beacon.major integerValue] minor:[beacon.minor integerValue] identifier:[NSString stringWithFormat:@"com.invibe.%@", [beacon promoIdentifier]]];
     
-    CLBeaconRegion* beaconRegion = [[CLBeaconRegion alloc] initWithProximityUUID:uuid major:[beacon.major integerValue] minor:[beacon minor] identifier:[NSString stringWithFormat:@"com.invibe.%@", [beacon promoIdentifier]]];
     beaconRegion.notifyEntryStateOnDisplay = YES;
     beaconRegion.notifyOnEntry = YES;
     beaconRegion.notifyOnExit = YES;
+    
+    //to be taken out
+    DDLogError (@"beacon region is %@", beaconRegion);
     
     [self.locationManager startMonitoringForRegion:beaconRegion];
     [self locationManager:self.locationManager didStartMonitoringForRegion:beaconRegion];
@@ -111,7 +114,7 @@
 
 -(void) resetVisibilityWithRegion:(CLRegion*)region
 {
-    DDLogDebug (@"Enter for region %@", region.identifier );
+    DDLogDebug (@"Reset visibility for region %@", region.identifier );
     
     self.dictVisibility[region.identifier] = [[NVBShowBeacon alloc] init];
     
@@ -126,7 +129,7 @@
     {
         NVBBeacon* tempBeacon = [self.confirmedBecons objectAtIndex:i];
         
-        if ([[tempBeacon beaconIdentifier] integerValue] == [regionMajorIdentifier integerValue])
+        if ([[tempBeacon promoIdentifier] integerValue] == [regionMajorIdentifier integerValue])
         {
             [arrToBeDeleted addObject:[NSNumber numberWithInteger:i]];
         }
@@ -248,9 +251,35 @@
 {
     DDLogDebug (@"new status is %d", status);
     
-    if ((status == kCLAuthorizationStatusNotDetermined)  || (status == kCLAuthorizationStatusDenied)
-        || (status == kCLAuthorizationStatusAuthorizedAlways) || (status == kCLAuthorizationStatusAuthorizedWhenInUse))
+    if ((status == kCLAuthorizationStatusNotDetermined) || (status == kCLAuthorizationStatusAuthorizedAlways) || (status == kCLAuthorizationStatusAuthorizedWhenInUse))
     {
+        //retrieving the beacons which we will be monitoring
+        [[NVBDataStore sharedInstance] getRegisteredBeacons:^(NSArray *responseArrayList, NSString *error) {
+            if (responseArrayList)
+            {
+                [self.arrMonitoredBeacons removeAllObjects];
+                [self.arrMonitoredBeacons addObjectsFromArray:responseArrayList];
+                
+                for (CLRegion* region in self.locationManager.monitoredRegions)
+                {
+                    if ([region.identifier rangeOfString:@"com.invibe"].location == 0)
+                        [self.locationManager stopMonitoringForRegion:region];
+                }
+                
+                DDLogDebug (@"Setting up monitoring for %ld regions", responseArrayList.count );
+            }
+            for (NVBBeacon* beacon in responseArrayList)
+                [self setupRegion:beacon];
+        }];
+        
+        
+    }
+    else
+    {
+        if (status == kCLAuthorizationStatusDenied)
+        {
+            DDLogError(@"Location services is denied");
+        }
     }
 }
 
@@ -350,17 +379,21 @@
                     {
                         self.notificationViewIsShown = YES;
                         
-                        NVBNotificationView* beaconNotificationView;
-                        if ([UIScreen mainScreen].bounds.size.height == 568) {
-                            beaconNotificationView = [[[NSBundle mainBundle] loadNibNamed:@"NVBNotificationView" owner:self options:nil] objectAtIndex:0];
-                        }
-                        else
-                        {
-                            beaconNotificationView = [[[NSBundle mainBundle] loadNibNamed:@"NVBNotificationView~375w" owner:self options:nil] objectAtIndex:0];
-                            
-                        }
-                        [beaconNotificationView updateWithPromotion:beacon andPromotion:beacon.exitPromotion];
-                        [beaconNotificationView animateVerticallyFromBottomWithOption:UIViewAnimationCurveEaseIn];
+                        
+                        //to be taken out
+//                        NVBNotificationView* beaconNotificationView;
+//                        if ([UIScreen mainScreen].bounds.size.height == 568) {
+//                            beaconNotificationView = [[[NSBundle mainBundle] loadNibNamed:@"NVBNotificationView" owner:self options:nil] objectAtIndex:0];
+//                        }
+//                        else
+//                        {
+//                            beaconNotificationView = [[[NSBundle mainBundle] loadNibNamed:@"NVBNotificationView~375w" owner:self options:nil] objectAtIndex:0];
+//                            
+//                        }
+//                        [beaconNotificationView updateWithPromotion:beacon andPromotion:beacon.exitPromotion];
+//                        [beaconNotificationView animateVerticallyFromBottomWithOption:UIViewAnimationCurveEaseIn];
+                        
+                        
                     }
                     else
                     {
@@ -417,13 +450,15 @@
                     if (self.notificationViewIsShown == NO)
                     {
                         NVBNotificationView* beaconNotificationView;
+                        //to be taken out
+                        /*
                         if ([UIScreen mainScreen].bounds.size.height == 568) {
                             beaconNotificationView = [[[NSBundle mainBundle] loadNibNamed:@"NVBNotificationView" owner:self options:nil] objectAtIndex:0];
                         }
                         else
                         {
                             beaconNotificationView = [[[NSBundle mainBundle] loadNibNamed:@"NVBNotificationView~375w" owner:self options:nil] objectAtIndex:0];
-                        }
+                        }*/
                         
                         
                         if (tempBeacon.proximity == CLProximityImmediate)
@@ -560,18 +595,18 @@
                     if (tempBeacon.proximity == CLProximityNear)
                     {
                         dict[@"text"] = @"confirmed near";
-                        [self subscribeToInvibeWithChannel:[myBeacon beaconIdentifier] withCompletionBlock:nil];
+                        [self subscribeToInvibeWithChannel:[myBeacon promoIdentifier] withCompletionBlock:nil];
                     }
                     else if (tempBeacon.proximity == CLProximityImmediate)
                     {
                         dict[@"text"] = @"confirmed immediate";
-                        [self subscribeToInvibeWithChannel:[myBeacon beaconIdentifier] withCompletionBlock:nil];
+                        [self subscribeToInvibeWithChannel:[myBeacon promoIdentifier] withCompletionBlock:nil];
                     }
                     else if (tempBeacon.proximity == CLProximityFar)
                     {
                         dict[@"text"] = @"confirmed far";
                         
-                        [self unsubscribeFromInvibe:[myBeacon beaconIdentifier] withCompletionBlock:nil];
+                        [self unsubscribeFromInvibe:[myBeacon promoIdentifier] withCompletionBlock:nil];
                     }
                     
                     [[NSNotificationCenter defaultCenter] postNotificationName:@"updateBeacon" object:nil userInfo:dict];
@@ -595,17 +630,17 @@
                     if (tempBeacon.proximity == CLProximityNear)
                     {
                         dict[@"text"] = @"pending near";
-                        [self subscribeToInvibeWithChannel:[myBeacon beaconIdentifier] withCompletionBlock:nil];
+                        [self subscribeToInvibeWithChannel:[myBeacon promoIdentifier] withCompletionBlock:nil];
                     }
                     else if (tempBeacon.proximity == CLProximityImmediate)
                     {
                         dict[@"text"] = @"pending immediate";
-                        [self subscribeToInvibeWithChannel:[myBeacon beaconIdentifier] withCompletionBlock:nil];
+                        [self subscribeToInvibeWithChannel:[myBeacon promoIdentifier] withCompletionBlock:nil];
                     }
                     else if (tempBeacon.proximity == CLProximityFar)
                     {
                         dict[@"text"] = @"pending far";
-                        [self unsubscribeFromInvibe:[myBeacon beaconIdentifier] withCompletionBlock:nil];
+                        [self unsubscribeFromInvibe:[myBeacon promoIdentifier] withCompletionBlock:nil];
                         
                     }
                     
@@ -621,20 +656,20 @@
         if (myBeacon.proximity == CLProximityNear)
         {
             dict[@"text"] = @"enter near";
-            [self subscribeToInvibeWithChannel:[myBeacon beaconIdentifier] withCompletionBlock:nil];
+            [self subscribeToInvibeWithChannel:[myBeacon promoIdentifier] withCompletionBlock:nil];
         }
         else if (myBeacon.proximity == CLProximityImmediate)
         {
             dict[@"text"] = @"enter immediate";
-            [self subscribeToInvibeWithChannel:[myBeacon beaconIdentifier] withCompletionBlock:nil];
+            [self subscribeToInvibeWithChannel:[myBeacon promoIdentifier] withCompletionBlock:nil];
         }
         else if (myBeacon.proximity == CLProximityFar)
         {
             dict[@"text"] = @"enter far";
             if ([[NSUserDefaults standardUserDefaults] boolForKey:APP_FOREGROUND] == NO)//when first entering in the region besides the did enter region it gets here as well and to avoid an unsubscrieb we do this
-                [self subscribeToInvibeWithChannel:[myBeacon beaconIdentifier] withCompletionBlock:nil];
+                [self subscribeToInvibeWithChannel:[myBeacon promoIdentifier] withCompletionBlock:nil];
             else
-                [self unsubscribeFromInvibe:[myBeacon beaconIdentifier] withCompletionBlock:nil];
+                [self unsubscribeFromInvibe:[myBeacon promoIdentifier] withCompletionBlock:nil];
             
         }
         
@@ -651,75 +686,73 @@
 
 {
     DDLogDebug(@"Enter");
-    [[NVBDataStore sharedInstance] getPromotionsWithBeaconId:[latestBeacon promoIdentifier] onCompletion:^(NVBBeacon *beaconResponse, NSString* error) {
-        if (error != nil)
-        {
-            DDLogError (@" Error while getting the invitations so we remove it from pending so we can try again later %@", error);
-            [self.pendingBeacons removeObject:latestBeacon];//we remove it from pending since we received a reply for it
-        }
-        else
-        {
-            [self.confirmedBecons addObject:latestBeacon];
-            [self.pendingBeacons removeObject:latestBeacon];
-            
-            DDLogDebug (@" We received invitations for beacon %@ and we move it to confirmed",[latestBeacon beaconIdentifier]);
-            latestBeacon.enterPromotion = beaconResponse.enterPromotion;
-            latestBeacon.exitPromotion = beaconResponse.exitPromotion;
-            latestBeacon.nearPromotion = beaconResponse.nearPromotion;
-            latestBeacon.immediatePromotion = beaconResponse.immediatePromotion;
-            latestBeacon.farPromotion = beaconResponse.farPromotion;
-            latestBeacon.name = beaconResponse.name;
-            latestBeacon.id = beaconResponse.id;
-            latestBeacon.venue = beaconResponse.venue;
-            latestBeacon.venue_name = beaconResponse.venue_name;
-            
-            
-            if (latestBeacon.enterPromotion == nil)
+    for (NVBBeacon* beaconResponse in self.arrMonitoredBeacons) {
+        NSLog (@"beacon identifier is %@ ", beaconResponse.beaconIdentifier);
+            if ([beaconResponse.beaconIdentifier isEqualToString:latestBeacon.beaconIdentifier])
             {
-                DDLogDebug (@"We have no enter region promotions ");
-                return;
-            }
-            
-            //we show it only if it wasnt shown before
-            if (self.notificationViewIsShown == NO)
-            {
-                DDLogDebug (@" The overlay was not shown so we can show it");
+                [self.confirmedBecons addObject:latestBeacon];
+                [self.pendingBeacons removeObject:latestBeacon];
                 
-                self.notificationViewIsShown = YES;
-                NVBNotificationView* beaconNotificationView;
-                if ([UIScreen mainScreen].bounds.size.height == 568) {
-                    beaconNotificationView = [[[NSBundle mainBundle] loadNibNamed:@"NVBNotificationView" owner:self options:nil] objectAtIndex:0];
+                DDLogDebug (@" We received invitations for beacon %@ and we move it to confirmed",[latestBeacon promoIdentifier]);
+                latestBeacon.enterPromotion = beaconResponse.enterPromotion;
+                latestBeacon.exitPromotion = beaconResponse.exitPromotion;
+                latestBeacon.nearPromotion = beaconResponse.nearPromotion;
+                latestBeacon.immediatePromotion = beaconResponse.immediatePromotion;
+                latestBeacon.farPromotion = beaconResponse.farPromotion;
+                latestBeacon.name = beaconResponse.name;
+                latestBeacon.id = beaconResponse.id;
+                latestBeacon.venue = beaconResponse.venue;
+                latestBeacon.venue_name = beaconResponse.venue_name;
+                
+                
+                if (latestBeacon.enterPromotion == nil)
+                {
+                    DDLogDebug (@"We have no enter region promotions ");
+                    return;
+                }
+                
+                //we show it only if it wasnt shown before
+                if (self.notificationViewIsShown == NO)
+                {
+                    DDLogDebug (@" The overlay was not shown so we can show it");
+                    
+                    self.notificationViewIsShown = YES;
+                    NVBNotificationView* beaconNotificationView;
+                    //to be taken out
+    //                if ([UIScreen mainScreen].bounds.size.height == 568) {
+    //                    beaconNotificationView = [[[NSBundle mainBundle] loadNibNamed:@"NVBNotificationView" owner:self options:nil] objectAtIndex:0];
+    //                }
+    //                else
+    //                {
+    //                    beaconNotificationView = [[[NSBundle mainBundle] loadNibNamed:@"NVBNotificationView~375w" owner:self options:nil] objectAtIndex:0];
+    //                    
+    //                }
+                    
+                    [beaconNotificationView updateWithPromotion:latestBeacon andPromotion:latestBeacon.enterPromotion];
+                    beaconNotificationView.notificationViewDismissActionBlock = ^()
+                    {
+                        DDLogDebug (@"Dismiss was pressed so we move to banned for %@", [latestBeacon promoIdentifier]);
+                        self.notificationViewIsShown = NO;
+                        [self.bannedBeacons addObject:latestBeacon];
+                        [self.confirmedBecons removeObject:latestBeacon];
+                    };
+                    
+                    beaconNotificationView.notificationSuccessfullRedirection = ^()
+                    {
+                        DDLogDebug (@"Ok was pressed for %@", [latestBeacon promoIdentifier]);
+                        //we show the accept gift screen
+                        self.notificationViewIsShown = NO;
+                        
+                    };
+                    
+                    [beaconNotificationView animateVerticallyFromBottomWithOption:UIViewAnimationCurveEaseIn];
                 }
                 else
                 {
-                    beaconNotificationView = [[[NSBundle mainBundle] loadNibNamed:@"NVBNotificationView~375w" owner:self options:nil] objectAtIndex:0];
-                    
                 }
-                
-                [beaconNotificationView updateWithPromotion:latestBeacon andPromotion:latestBeacon.enterPromotion];
-                beaconNotificationView.notificationViewDismissActionBlock = ^()
-                {
-                    DDLogDebug (@"Dismiss was pressed so we move to banned for %@", [latestBeacon beaconIdentifier]);
-                    self.notificationViewIsShown = NO;
-                    [self.bannedBeacons addObject:latestBeacon];
-                    [self.confirmedBecons removeObject:latestBeacon];
-                };
-                
-                beaconNotificationView.notificationSuccessfullRedirection = ^()
-                {
-                    DDLogDebug (@"Ok was pressed for %@", [latestBeacon beaconIdentifier]);
-                    //we show the accept gift screen
-                    self.notificationViewIsShown = NO;
-                    
-                };
-                
-                [beaconNotificationView animateVerticallyFromBottomWithOption:UIViewAnimationCurveEaseIn];
-            }
-            else
-            {
             }
         }
-    }];
+    //}];
     
 }
 

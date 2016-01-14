@@ -17,7 +17,7 @@ pod "NVBBeaconSDK"
 
 1. Log in the dashboard [http://admin.invibe.me/](http://admin.invibe.me/) with your credentials
 
-2. Navigate on the left to the applications are
+2. Navigate on the left to the applications area
 
 3. Take a look at the client id and client secret, you will need them later
 
@@ -28,6 +28,10 @@ In the import section add
 ```ruby
 #import <NVBBeaconSDK/NVBBeaconSDK.h>
 ```
+
+
+###If your app already has push notifications enabled you can go on, otherwise check [https://github.com/alexandruchis1987/NVBBeaconSDK/wiki/Push-Notifications](How To Configure Push Notifications) 
+
 
 Before the last line of ‘didFinishLaunchingWithOptions’ method request push notification authorization
 

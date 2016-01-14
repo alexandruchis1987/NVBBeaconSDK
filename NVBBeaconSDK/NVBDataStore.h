@@ -23,12 +23,6 @@ typedef void(^arrayListBlock)(NSMutableArray* responseArrayList, NSString *error
 + (NVBDataStore *)sharedInstance;
 
 
-//location manager related methods
-- (void)startLocationServicesForeground ;
-- (void)startLocationServicesBackground ;
-- (void)stopLocationServices;
-
-
 //methods for session
 //-(void) requestTokenWithClientId:(NSString)
 
@@ -46,6 +40,10 @@ typedef void(^arrayListBlock)(NSMutableArray* responseArrayList, NSString *error
 
 //method which returns the beacons associated with the current client id
 - (void)getRegisteredBeacons:(arrayListBlock)completion;
+
+//method which registers with the system
+- (void)registerWithClientId:(NSString*)clientId andClientSecret:(NSString*)clientSecret andCompletionBlock: (booleanSuccessBlock)completion;
+
 
 
 -(void) setApplicationId:(NSString*) applicationId;

@@ -23,38 +23,30 @@
     return beaconSDK;
 }
 
-+ (void)setApplicationIdentifier:(NSString *)clientKey {
-    if (clientKey.length == 0) {
-        NSLog(@"'clientKey' should not be nil.");
++ (void)setClientId:(NSString *)clientId andClientSecret:(NSString*)clientSecret; {
+    if (clientId.length == 0) {
+        DDLogDebug(@"'Client Id' should not be empty.");
     }
-    NSAssert([clientKey length] > 0, @"'clientKey' should not be nil.");
+    if (clientSecret.length == 0) {
+        DDLogDebug(@"'Client Secret' should not be empty.");
+    }
     
-    NSString *encodedHeader = [NSString stringWithFormat:@"Bearer %@", clientKey];
-    [[NVBDataStore sharedInstance] setDefaultHeader:@"Authorization" value:encodedHeader];
-}
-
-
-/*!
- @abstract Starts the entire plaform services. Application Id is checked if it is provided
- */
-
-+ (void) startServices
-{
-    //Launching the service handling the detection of the beacons and the entire campaign management
+    NSAssert([clientId length] > 0, @"'Client Id' should not be nil.");
+    NSAssert([clientSecret length] > 0, @"'Client Id' should not be nil.");
     
-    //to be taken out
-    [[NVBDataStore sharedInstance] startLocationServicesForeground];
-    [[NVBBeaconMonitoringService sharedInstance] startServices];
-}
-
-
-/*!
- @abstract Stops the entire plaform services.
- */
-
-+ (void) stopServices
-{
     
+    [[NVBDataStore sharedInstance] registerWithClientId:clientId andClientSecret:clientSecret andCompletionBlock:^(BOOL success, NSString *error) {
+        if (success)
+        {            
+            [[NVBBeaconMonitoringService sharedInstance] startServices];
+            
+        }
+        else
+        {
+            DDLogError(error);
+        }
+    }];
+
 }
 
 
