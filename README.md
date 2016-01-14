@@ -48,7 +48,7 @@ Before the last line of ‘didFinishLaunchingWithOptions’ method from the appl
 }
 ```
 
-Start the Beacon SDK services
+Start the Beacon SDK services (Use the client id and client secret key from your account on your [http://admin.invibe.me/](Dashboard))
 
 ```ruby
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
