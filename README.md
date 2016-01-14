@@ -1,5 +1,3 @@
-## Usage
-
 ## Requirements
 
 iOS8+
@@ -21,19 +19,19 @@ pod "NVBBeaconSDK"
 
 3. Take a look at the client id and client secret, you will need them later
 
-###Application Delegate file 
+## Usage
 
-In the import section add
+In the import section for your application delegate file add
 
 ```ruby
 #import <NVBBeaconSDK/NVBBeaconSDK.h>
 ```
 
 
-###If your app already has push notifications enabled you can go on, otherwise check [How To Configure Push Notifications](https://github.com/alexandruchis1987/NVBBeaconSDK/wiki/Push-Notifications)
+###If your app already has push notifications enabled **send us the exported .p12 ssl for push notifications(development + production) files to support@invibe.me and wait for our confirmation that is enabled**. If your app doesn’t have push notifications enabled check [How To Configure Push Notifications](https://github.com/alexandruchis1987/NVBBeaconSDK/wiki/Push-Notifications)
 
 
-Before the last line of ‘didFinishLaunchingWithOptions’ method request push notification authorization
+Before the last line of ‘didFinishLaunchingWithOptions’ method from the application delegate file, request push notification authorization
 
 ```ruby
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
@@ -64,8 +62,7 @@ Start the Beacon SDK services
     [[UIApplication sharedApplication] registerForRemoteNotificationTypes: (UIUserNotificationTypeBadge | UIUserNotificationTypeSound | UIUserNotificationTypeAlert)];
     
     
-    [NVBBeaconSDK setApplicationIdentifier:@“YOUR_APPLICATION_KEY”];
-    [NVBBeaconSDK startServices];
+    [NVBBeaconSDK setClientId:@“YOUR_CLIENT_ID” andClientSecret:@“YOUR_CLIENT_SECRET_KEY”];
     
     
     return YES;
