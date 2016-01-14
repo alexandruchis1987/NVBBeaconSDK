@@ -30,7 +30,7 @@ In the import section add
 ```
 
 
-###If your app already has push notifications enabled you can go on, otherwise check [https://github.com/alexandruchis1987/NVBBeaconSDK/wiki/Push-Notifications](How To Configure Push Notifications) 
+###If your app already has push notifications enabled you can go on, otherwise check [How To Configure Push Notifications](https://github.com/alexandruchis1987/NVBBeaconSDK/wiki/Push-Notifications)
 
 
 Before the last line of ‘didFinishLaunchingWithOptions’ method request push notification authorization
