@@ -119,6 +119,14 @@ Forward push notifications method calls to the Beacon SDK
 ```
 
 
+## Reference App - Example
+
+We provide [Example](https://github.com/alexandruchis1987/BeaconDevelopmentProject) as a generic reference on how to config and start the sdk
+
+The Example app is used as a simple reference app. It will evolve over time, along with other example apps -- stay tuned for that!
+
+
+
 
 
 ## Author
