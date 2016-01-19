@@ -1,3 +1,5 @@
+## Please direct all Support Questions and Concerns to support@invibe.me
+
 ## Requirements
 
 iOS8+
@@ -33,12 +35,12 @@ In the import section for your application delegate file add
 
 Make sure your .plist file contains the following line of code
 
-‘<key>UIBackgroundModes</key>
+```ruby
+<key>UIBackgroundModes</key>
 <array>
 	<string>remote-notification</string>
-</array>’
-
-
+</array>
+```
 
 
 
@@ -129,3 +131,5 @@ NVBBeaconSDK is available under the MIT license. See the LICENSE file for more i
 =======
 =======
 # NVBBeaconSDK
+
+## Please direct all Support Questions and Concerns to support@invibe.me
