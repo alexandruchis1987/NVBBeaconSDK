@@ -31,6 +31,18 @@ In the import section for your application delegate file add
 ###If your app already has push notifications enabled **send us the exported .p12 ssl for push notifications(development + production) files to support@invibe.me and wait for our confirmation that is enabled**. If your app doesn’t have push notifications enabled check [How To Configure Push Notifications](https://github.com/alexandruchis1987/NVBBeaconSDK/wiki/Push-Notifications)
 
 
+Make sure your .plist file contains the following line of code
+
+‘<key>UIBackgroundModes</key>
+<array>
+	<string>remote-notification</string>
+</array>’
+
+
+
+
+
+
 Before the last line of ‘didFinishLaunchingWithOptions’ method from the application delegate file, request push notification authorization
 
 ```ruby

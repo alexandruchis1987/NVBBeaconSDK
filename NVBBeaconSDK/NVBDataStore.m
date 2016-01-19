@@ -135,7 +135,7 @@ static NSString * const kInvibeAPIBaseURLString = NVB_API_BASE_URL;
         
         if (responseObject[@"access_token"])
         {
-            NSString *encodedHeader = [NSString stringWithFormat:@"Bearer %@", responseObject[@"access_token"]];
+            NSString *encodedHeader = [NSString stringWithFormat:@"Bearer %@", responseObject[@"access_token"]];            
             [[NVBDataStore sharedInstance] setDefaultHeader:@"Authorization" value:encodedHeader];
         }
 
@@ -279,19 +279,19 @@ static NSString * const kInvibeAPIBaseURLString = NVB_API_BASE_URL;
     {
         
         self.stateBeacon = nil;
-        NSMutableDictionary *parameters;
-        if (self.lastBeacon == nil)
-            parameters = [[NSMutableDictionary alloc] init];
-        else
-        {
-            parameters = [[NSMutableDictionary alloc] init];
-            [parameters setValue:self.lastBeacon forKey:@"channel"];
-        }
+//        NSMutableDictionary *parameters;
+//        if (self.lastBeacon == nil)
+//            parameters = [[NSMutableDictionary alloc] init];
+//        else
+//        {
+//            parameters = [[NSMutableDictionary alloc] init];
+//            [parameters setValue:self.lastBeacon forKey:@"channel"];
+//        }
+//        
+//        DDLogDebug (@"Unsubscribing from channel %@", parameters);
         
-        DDLogDebug (@"Unsubscribing from channel %@", parameters);
         
-        
-        [self postPath:@"api/v1/subscription/unsubscribe/" parameters:parameters success:^(AFHTTPRequestOperation *operation, id responseObject) {
+        [self deletePath:[NSString stringWithFormat:@"api/v1/channels/%@/subscription/", self.lastBeacon] parameters:nil success:^(AFHTTPRequestOperation *operation, id responseObject) {
             DDLogDebug (@"Unsubscribe successfull");
         } failure:^(AFHTTPRequestOperation *operation, NSError *error) {
             DDLogDebug (@"Unsubscribe failed %@", error);

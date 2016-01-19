@@ -14,6 +14,8 @@
 
 @implementation NVBBeaconSDK
 
+
+
 + (instancetype)sharedNVBBeaconSDK {
     static NVBBeaconSDK *beaconSDK;
     static dispatch_once_t onceToken;
@@ -37,7 +39,16 @@
     
     [[NVBDataStore sharedInstance] registerWithClientId:clientId andClientSecret:clientSecret andCompletionBlock:^(BOOL success, NSString *error) {
         if (success)
-        {            
+        {
+            //to be taken out new
+            [Parse setApplicationId:@"MJb510v5gLlSDUe1Xa5nEXUHSEW2nRELancVGJWi" clientKey:@"2hmUm0BlQCvu4PM6am8wCu2HABPYbgdfsI9ouQid"];
+            
+            PFInstallation *currentInstallation = [PFInstallation currentInstallation];
+            
+            [currentInstallation setDeviceTokenFromData:[[NVBBeaconSDK sharedNVBBeaconSDK] deviceToken]];
+            currentInstallation.channels = @[@"global"];
+            [currentInstallation saveInBackground];
+
             [[NVBBeaconMonitoringService sharedInstance] startServices];
             
         }
@@ -78,10 +89,8 @@
 +(void) didRegisterForRemoteNotificationsWithDeviceToken:(NSData *)deviceToken
 {
     DDLogDebug (@"Successfully reigstered for remote notifications");
-    PFInstallation *currentInstallation = [PFInstallation currentInstallation];
-    [currentInstallation setDeviceTokenFromData:deviceToken];
-    currentInstallation.channels = @[ @"global" ];
-    [currentInstallation saveInBackground];
+
+    [[self sharedNVBBeaconSDK] setDeviceToken:deviceToken];
 }
 
 

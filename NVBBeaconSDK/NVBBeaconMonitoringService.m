@@ -93,8 +93,11 @@
 
 - (void)setupRegion: (NVBBeacon*) beacon {
     //retrivegin the uuid for the estimote beacon
-    NSUUID *uuid = [[NSUUID alloc] initWithUUIDString:beacon.uuid];
     
+    //to be taken out new new
+//    NSUUID *uuid = [[NSUUID alloc] initWithUUIDString:beacon.uuid];
+    NSUUID *uuid = [[NSUUID alloc] initWithUUIDString:@"b9407f30-f5f8-466e-aff9-25556b57fe6d"];
+
     
     //start monitoring for events for that particular region
     CLBeaconRegion* beaconRegion = [[CLBeaconRegion alloc] initWithProximityUUID:uuid major:[beacon.major integerValue] minor:[beacon.minor integerValue] identifier:[NSString stringWithFormat:@"com.invibe.%@", [beacon promoIdentifier]]];
@@ -106,8 +109,11 @@
     //to be taken out
     DDLogError (@"beacon region is %@", beaconRegion);
     
-    [self.locationManager startMonitoringForRegion:beaconRegion];
-    [self locationManager:self.locationManager didStartMonitoringForRegion:beaconRegion];
+    if (beaconRegion)
+    {
+        [self.locationManager startMonitoringForRegion:beaconRegion];
+        [self locationManager:self.locationManager didStartMonitoringForRegion:beaconRegion];
+    }
     
 }
 
@@ -268,6 +274,8 @@
                 
                 DDLogDebug (@"Setting up monitoring for %ld regions", responseArrayList.count );
             }
+            
+            //to be taken out new new
             for (NVBBeacon* beacon in responseArrayList)
                 [self setupRegion:beacon];
         }];

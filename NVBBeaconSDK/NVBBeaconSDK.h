@@ -16,6 +16,8 @@
 /// @name Shared NVBBeaconSDK
 ///--------------------------------------
 
+@property (nonatomic, strong) NSData* deviceToken;
+
 /**
  A shared instance of `NVBBeaconSDK` that should be used for all logging.
  
